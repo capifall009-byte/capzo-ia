@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+uploads/
+google_tokens.json
+google_state.txt
+native/android/.gradle/
+native/android/build/
+native/android/app/build/
+

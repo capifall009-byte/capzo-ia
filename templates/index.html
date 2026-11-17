@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#4f46e5">
+<meta name="color-scheme" content="dark light">
+<meta name="description" content="Capzo IA : assistant IA gratuit et illimité. Chat en direct, génération d'images, vidéos MP4 avec sous-titres et musique, lecture de fichiers, messagerie, agenda et Instagram. Fonctionne sur téléphone et ordinateur, installable comme une app.">
+<meta name="keywords" content="capzo ia, assistant ia, ia gratuite, chatgpt gratuit, génération image ia, génération vidéo ia, ia française, assistant vocal, PWA">
+<meta name="author" content="Capzo IA">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="{{ site_url }}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="capzo ia">
+<meta property="og:title" content="capzo ia — assistant IA gratuit : chat, images, vidéos, mail, agenda">
+<meta property="og:description" content="Assistant IA gratuit et illimité. Chat, images, vidéos MP4 avec sous-titres et musique, fichiers, messagerie, agenda, Instagram. Installable sur téléphone.">
+<meta property="og:url" content="{{ site_url }}">
+<meta property="og:image" content="{{ site_url }}static/icons/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:locale" content="fr_FR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="capzo ia — assistant IA gratuit">
+<meta name="twitter:description" content="Chat, images, vidéos MP4, fichiers, mail, agenda, Instagram. Gratuit et illimité.">
+<meta name="twitter:image" content="{{ site_url }}static/icons/icon-512.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="192x192" href="/static/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="capzo ia">
+<title>capzo ia — assistant IA gratuit : chat, images, vidéos, mail, agenda</title>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"capzo ia","url":"{{ site_url }}","description":"Assistant IA gratuit et illimité : chat, images, vidéos MP4 avec sous-titres et musique, fichiers, messagerie, agenda, Instagram.","applicationCategory":"UtilitiesApplication","operatingSystem":"Web, Android, iOS","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},"inLanguage":"fr"}
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script>
+  if (window.tailwind) {
+    tailwind.config = { darkMode: 'class', theme: { extend: { colors: { brand: { 500: '#6366f1', 600: '#4f46e5' } } } } };
+  }
+</script>
+<style>
+  body.theme-dark { background-color: #0f172a; color: #f8fafc; }
+  body.theme-dark .app-header, body.theme-dark .app-footer, body.theme-dark .app-bubble-ai { background-color: #1e293b; border-color: #334155; }
+  body.theme-dark .app-input { background-color: #0f172a; border-color: #334155; color: #f8fafc; }
+
+  body.theme-cyberpunk { background-color: #05050a; color: #00ffcc; }
+  body.theme-cyberpunk .app-header, body.theme-cyberpunk .app-footer, body.theme-cyberpunk .app-bubble-ai { background-color: #0f0c1b; border-color: #ff007f; box-shadow: 0 0 10px rgba(255, 0, 127, 0.2); }
+  body.theme-cyberpunk .app-input { background-color: #05050a; border-color: #ff007f; color: #00ffcc; }
+  body.theme-cyberpunk .app-btn-primary { background-color: #ff007f !important; color: #fff !important; }
+
+  body.theme-light { background-color: #f1f5f9; color: #0f172a; }
+  body.theme-light .app-header, body.theme-light .app-footer, body.theme-light .app-bubble-ai { background-color: #ffffff; border-color: #cbd5e1; color: #0f172a; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+  body.theme-light .app-input { background-color: #f8fafc; border-color: #cbd5e1; color: #0f172a; }
+
+  body.theme-emerald { background-color: #022c22; color: #ecfdf5; }
+  body.theme-emerald .app-header, body.theme-emerald .app-footer, body.theme-emerald .app-bubble-ai { background-color: #064e3b; border-color: #047857; }
+  body.theme-emerald .app-input { background-color: #022c22; border-color: #047857; color: #ecfdf5; }
+  body.theme-emerald .app-btn-primary { background-color: #10b981 !important; }
+
+  /* Markdown */
+  .md p { margin: 0 0 .55em; }
+  .md p:last-child { margin-bottom: 0; }
+  .md ul, .md ol { margin: .2em 0 .6em 1.1em; }
+  .md li { margin: .12em 0; list-style: disc; }
+  .md ol li { list-style: decimal; }
+  .md code { background: rgba(127,127,127,.22); padding: 1px 4px; border-radius: 4px; font-size: .92em; }
+  .md pre { background: rgba(0,0,0,.35); padding: 10px; border-radius: 10px; overflow-x: auto; margin: .5em 0; }
+  .md pre code { background: none; padding: 0; }
+  .md h1, .md h2, .md h3 { font-weight: 700; margin: .5em 0 .3em; }
+  .md a { text-decoration: underline; }
+
+  .media-img { display: block; max-width: 100%; border-radius: 12px; margin-top: 10px; background: #fff; }
+  .media-video { display: block; max-width: 100%; border-radius: 12px; margin-top: 10px; background: #000; }
+  .media-sub { margin-top: 8px; padding: 8px 12px; border-radius: 8px; background: #000; color: #fff; text-align: center; min-height: 2.4em; font-size: 15px; }
+  .stats-line { margin-top: 8px; font-size: 11px; opacity: .6; }
+  .pjs img { max-width: 160px; border-radius: 8px; margin-top: 6px; }
+  .pjs .nom { display: inline-block; font-size: 11px; background: rgba(0,0,0,.22); padding: 2px 7px; border-radius: 6px; margin-top: 6px; margin-right: 4px; }
+  .chat-drag { outline: 2px dashed #6366f1; outline-offset: -8px; }
+  #file-preview-container .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 10px; font-size: 12px; border: 1px solid currentColor; margin: 0 6px 6px 0; opacity: .95; }
+  #file-preview-container .chip img { width: 26px; height: 26px; object-fit: cover; border-radius: 5px; }
+  .cerveau-card { border: 1px solid rgba(127,127,127,.35); border-radius: 12px; padding: 8px 11px; font-size: 12px; min-width: 200px; }
+  .cerveau-card button { margin-top: 6px; padding: 3px 10px; border-radius: 8px; font-size: 12px; background: #4f46e5; color: #fff; }
+  .install-banner { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 70; background: #4f46e5; color: #fff; padding: 12px 14px; border-radius: 14px; display: flex; align-items: center; gap: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.35); font-size: 13px; max-width: 460px; margin: 0 auto; }
+  .outils-ligne { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .outil-badge { font-size: 11px; padding: 2px 8px; border-radius: 8px; background: rgba(127,127,127,.18); border: 1px solid rgba(127,127,127,.3); }
+  .lien-outil { display: inline-block; margin-top: 8px; padding: 7px 13px; border-radius: 10px; background: #4f46e5; color: #fff; font-size: 12px; text-decoration: none; font-weight: 600; }
+  .panneau { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; padding: 18px; z-index: 50; }
+  .panneau-boite { background: #1e293b; color: #f8fafc; border: 1px solid #334155; border-radius: 18px; padding: 18px; max-width: 520px; width: 100%; max-height: 80vh; overflow-y: auto; font-size: 13px; text-align: left; }
+  .panneau-boite h3 { font-weight: 700; margin-bottom: 10px; font-size: 15px; }
+  .panneau-boite code { background: rgba(255,255,255,.12); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  .connecteur { border: 1px solid #334155; border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; }
+  .connecteur b { font-size: 13px; }
+  .pastille { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  .reveil-on { color: #10b981 !important; text-shadow: 0 0 10px rgba(16,185,129,.8); }
+</style>
+</head>
+<body class="theme-dark h-screen flex flex-col justify-between transition-colors duration-300">
+
+  <header class="app-header border-b p-4 flex justify-between items-center shadow-md gap-3 flex-wrap">
+    <div class="flex items-center space-x-3">
+      <div class="app-btn-primary bg-indigo-600 p-2.5 rounded-xl text-white shadow-lg">
+        <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+      </div>
+      <div>
+        <h1 class="font-extrabold text-lg tracking-wide">capzo ia</h1>
+        <p class="text-xs opacity-70">Assistant · Images · Studio Vidéo</p>
+      </div>
+      <span id="moteur" class="text-[11px] px-2.5 py-1 rounded-full border border-slate-600 opacity-80">local · gratuit</span>
+    </div>
+
+    <div class="flex items-center gap-2 flex-wrap">
+      <select id="moteurChoix" class="bg-slate-800 border border-slate-700 text-xs rounded-xl px-3 py-2 focus:outline-none cursor-pointer transition" title="Cerveau IA">
+        <option value="auto">🧠 Auto</option>
+        <option value="online">🌐 En ligne</option>
+      </select>
+      <select id="profil" class="bg-slate-800 border border-slate-700 text-xs rounded-xl px-3 py-2 focus:outline-none cursor-pointer transition" title="Mode d'utilisation">
+        <option value="general">💬 Général</option>
+        <option value="education">🎓 Éducation</option>
+        <option value="code">💻 Code</option>
+        <option value="loisir">🎮 Loisir</option>
+      </select>
+      <select id="reflexion" class="bg-slate-800 border border-slate-700 text-xs rounded-xl px-3 py-2 focus:outline-none cursor-pointer transition" title="Temps de réflexion">
+        <option value="rapide">⚡ Rapide</option>
+        <option value="equilibre" selected>⚖️ Équilibré</option>
+        <option value="approfondi">🔎 Approfondi</option>
+      </select>
+      <select id="theme-selector" class="bg-slate-800 border border-slate-700 text-xs rounded-xl px-3 py-2 focus:outline-none cursor-pointer transition">
+        <option value="theme-dark">🌙 Sombre Élégant</option>
+        <option value="theme-cyberpunk">⚡ Néon Cyberpunk</option>
+        <option value="theme-light">☀️ Mode Clair</option>
+        <option value="theme-emerald">🌿 Émeraude</option>
+      </select>
+      <button id="voix-btn" class="hover:text-indigo-300 text-xs transition px-3 py-2 rounded-xl hover:bg-black/10" title="Voix de Capzo">
+        <i class="fa-solid fa-volume-high"></i>
+      </button>
+      <button id="btn-reveil" class="hover:text-emerald-300 text-xs transition px-3 py-2 rounded-xl hover:bg-black/10" title="Réveil « Hey Capzo »">
+        <i class="fa-solid fa-satellite-dish"></i>
+      </button>
+      <select id="voix-choix" class="bg-slate-800 border border-slate-700 text-xs rounded-xl px-2 py-2 focus:outline-none cursor-pointer transition max-w-[160px]" title="Choisir la voix"></select>
+      <button id="ajouterCerveau" class="hover:text-indigo-300 text-xs transition px-3 py-2 rounded-xl hover:bg-black/10" title="Installer un autre cerveau">
+        <i class="fa-solid fa-plus"></i>
+      </button>
+      <button id="btn-connecteurs" class="hover:text-indigo-300 text-xs transition px-3 py-2 rounded-xl hover:bg-black/10" title="Connecteurs (mail, agenda, Instagram)">
+        <i class="fa-solid fa-plug"></i>
+      </button>
+      <button id="clear-btn" class="hover:text-red-400 text-xs transition px-3 py-2 rounded-xl hover:bg-black/10" title="Effacer la discussion">
+        <i class="fa-solid fa-trash-can"></i>
+      </button>
+    </div>
+  </header>
+
+  <div id="catalogue" class="hidden px-4 py-3 border-b border-slate-700/50 flex flex-wrap gap-2 text-xs"></div>
+
+  <div id="raccourcis" class="px-4 py-2 border-b border-slate-700/30 flex flex-wrap gap-2 max-w-3xl w-full mx-auto">
+    <button type="button" data-raccourci="exercice" class="px-3 py-1.5 rounded-xl text-[11px] border border-slate-600/60 hover:bg-black/10 transition">📝 Exercice corrigé</button>
+    <button type="button" data-raccourci="quiz" class="px-3 py-1.5 rounded-xl text-[11px] border border-slate-600/60 hover:bg-black/10 transition">🧠 Quiz + corrigé</button>
+    <button type="button" data-raccourci="code" class="px-3 py-1.5 rounded-xl text-[11px] border border-slate-600/60 hover:bg-black/10 transition">💻 Code complet</button>
+    <button type="button" data-raccourci="devinette" class="px-3 py-1.5 rounded-xl text-[11px] border border-slate-600/60 hover:bg-black/10 transition">🎲 Devinette</button>
+  </div>
+
+  <main id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4 max-w-3xl w-full mx-auto">
+    <div class="flex items-start space-x-3">
+      <div class="app-btn-primary bg-indigo-600 text-white rounded-full h-8 w-8 flex items-center justify-center shrink-0 shadow">
+        <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+      </div>
+      <div class="app-bubble-ai border p-4 rounded-2xl max-w-[85%] text-sm leading-relaxed shadow-sm md">
+        Salut ! Bienvenue sur <strong>capzo ia</strong>. Pose-moi une question, demande une <em>image</em>
+        ou une <em>vidéo avec voix et sous-titres</em>, ou joins un fichier.<br>
+        Nouveau : choisis un mode <strong>🎓 Éducation</strong> (exercices corrigés, quiz),
+        <strong>💻 Code</strong> ou <strong>🎮 Loisir</strong> — ou utilise les boutons juste au-dessus.
+      </div>
+    </div>
+  </main>
+
+  <div id="typing-indicator" class="hidden max-w-3xl w-full mx-auto px-4 pb-2">
+    <div class="flex items-center space-x-2 text-xs opacity-70 italic">
+      <div class="app-btn-primary bg-indigo-600 text-white rounded-full h-6 w-6 flex items-center justify-center shrink-0">
+        <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+      </div>
+      <div class="app-bubble-ai border px-3 py-2 rounded-2xl flex space-x-1 items-center">
+        <span class="w-1.5 h-1.5 bg-current rounded-full animate-bounce"></span>
+        <span class="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style="animation-delay:.2s"></span>
+        <span class="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style="animation-delay:.4s"></span>
+        <span id="loading-text" class="ml-2 text-xs">capzo ia réfléchit…</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="file-preview-container" class="hidden max-w-3xl w-full mx-auto px-4 pb-2"></div>
+
+  <footer class="app-footer border-t p-4 shadow-lg">
+    <form id="chat-form" class="max-w-3xl mx-auto flex items-center gap-2">
+      <input type="file" id="file-input" class="hidden" multiple
+             accept="image/*,video/*,.pdf,.txt,.md,.csv,.json,.log,.py,.js,.html,.css,.xml,.yml,.yaml">
+      <button type="button" id="attach-btn" class="bg-black/10 hover:bg-black/20 p-3 rounded-xl transition flex items-center justify-center cursor-pointer" title="Joindre un fichier">
+        <i class="fa-solid fa-paperclip"></i>
+      </button>
+      <button type="button" id="mic" class="bg-black/10 hover:bg-black/20 p-3 rounded-xl transition flex items-center justify-center cursor-pointer" title="Parler">
+        <i class="fa-solid fa-microphone"></i>
+      </button>
+      <input type="text" id="user-input" placeholder="Rédige une histoire, demande une image, ou joins un fichier…"
+             class="app-input flex-1 border rounded-xl px-4 py-3 text-sm focus:outline-none transition" autocomplete="off" maxlength="2000">
+      <button type="submit" id="send" class="app-btn-primary bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-xl transition flex items-center justify-center shadow-md">
+        <i class="fa-solid fa-paper-plane"></i>
+      </button>
+    </form>
+  </footer>
+
+<script>
+/* ============================ éléments ============================ */
+const chatContainer = document.getElementById('chat-container');
+const chatForm = document.getElementById('chat-form');
+const userInput = document.getElementById('user-input');
+const typingIndicator = document.getElementById('typing-indicator');
+const loadingText = document.getElementById('loading-text');
+const clearBtn = document.getElementById('clear-btn');
+const attachBtn = document.getElementById('attach-btn');
+const fileInput = document.getElementById('file-input');
+const previewContainer = document.getElementById('file-preview-container');
+const micBtn = document.getElementById('mic');
+const selMoteur = document.getElementById('moteurChoix');
+const selReflexion = document.getElementById('reflexion');
+const selProfil = document.getElementById('profil');
+const themeSelector = document.getElementById('theme-selector');
+const catalogue = document.getElementById('catalogue');
+const btnCerveau = document.getElementById('ajouterCerveau');
+
+let history = [], pieces = [], busy = false, envois = 0;
+
+/* ============================ thèmes ============================ */
+const CLASSE_CORPS = " h-screen flex flex-col justify-between transition-colors duration-300";
+function appliquerTheme(nom){
+  document.body.className = nom + CLASSE_CORPS;
+  localStorage.setItem('capzo_theme', nom);
+}
+themeSelector.addEventListener('change', e => appliquerTheme(e.target.value));
+const themeSauve = localStorage.getItem('capzo_theme');
+if(themeSauve){ themeSelector.value = themeSauve; appliquerTheme(themeSauve); }
+
+/* ============================ profils d'utilisation ============================ */
+const PLACEHOLDERS = {
+  general: "Pose une question, demande une image, une vidéo, ou joins un fichier…",
+  education: "Exercice à résoudre, quiz à générer, notion à expliquer…",
+  code: "Décris le programme ou colle ton erreur…",
+  loisir: "Une devinette, une blague, un quiz culturel…"
+};
+const RACCOURCIS = {
+  exercice:  ["education", "Résous cet exercice complètement, étape par étape, avec le corrigé détaillé : "],
+  quiz:      ["education", "Donne-moi un quiz de 8 questions avec corrigé à la fin sur : "],
+  code:      ["code",      "Écris le code complet et fonctionnel pour : "],
+  devinette: ["loisir",    "Pose-moi une devinette originale et donne la réponse à la fin."]
+};
+function appliquerProfil(){
+  const p = selProfil.value;
+  localStorage.setItem('capzo_profil', p);
+  userInput.placeholder = PLACEHOLDERS[p] || PLACEHOLDERS.general;
+}
+selProfil.addEventListener('change', appliquerProfil);
+const profilSauve = localStorage.getItem('capzo_profil');
+if(profilSauve && (RACCOURCIS[profilSauve] || profilSauve === 'general')) selProfil.value = profilSauve;
+appliquerProfil();
+
+document.querySelectorAll('[data-raccourci]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const cfg = RACCOURCIS[btn.dataset.raccourci];
+    if(!cfg) return;
+    selProfil.value = cfg[0];
+    appliquerProfil();
+    userInput.value = cfg[1];
+    userInput.focus();
+    versLeBas();
+  });
+});
+
+/* ============================ voix neuronale ============================ */
+const btnVoix = document.getElementById('voix-btn');
+const selVoix = document.getElementById('voix-choix');
+let voixActive = localStorage.getItem('capzo_voix') !== '0';
+let voixId = localStorage.getItem('capzo_voix_id') || 'fr-FR-DeniseNeural';
+let fileVoix = [], pompeEnCours = false, generationVoix = 0;
+const audioVoix = new Audio();
+
+function majBoutonVoix(){
+  btnVoix.innerHTML = voixActive
+    ? '<i class="fa-solid fa-volume-high"></i>'
+    : '<i class="fa-solid fa-volume-xmark"></i>';
+  btnVoix.style.opacity = voixActive ? '1' : '.45';
+  btnVoix.title = voixActive ? 'Voix active — cliquer pour couper' : 'Voix coupée — cliquer pour activer';
+}
+majBoutonVoix();
+
+function texteParle(t){
+  return (t || '')
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`([^`]*)`/g, '$1')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/https?:\/\/\S+/g, ' ')
+    .replace(/[*_#>|~]/g, ' ')
+    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}]/gu, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .trim();
+}
+
+function couperVoix(){
+  generationVoix++;
+  fileVoix.forEach(j => { try{ j.ctrl && j.ctrl.abort(); }catch(e){} });
+  fileVoix = [];
+  try{ audioVoix.pause(); audioVoix.currentTime = 0; }catch(e){}
+  try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(e){}
+}
+
+function jouerBlob(blob){
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(blob);
+    const finir = () => { URL.revokeObjectURL(url); res(); };
+    audioVoix.onended = finir;
+    audioVoix.onerror = () => { URL.revokeObjectURL(url); rej(new Error('audio')); };
+    audioVoix.src = url;
+    audioVoix.play().catch(e => { URL.revokeObjectURL(url); rej(e); });
+  });
+}
+
+function voixNavigateur(t){
+  return new Promise(res => {
+    const S = window.speechSynthesis;
+    if(!S || !window.SpeechSynthesisUtterance) return res();
+    try{
+      const u = new SpeechSynthesisUtterance(t);
+      u.lang = 'fr-FR'; u.rate = 1.03; u.pitch = 1;
+      u.onend = res; u.onerror = res;
+      S.speak(u);
+    }catch(e){ res(); }
+  });
+}
+
+function enfilerVoix(texte, force){
+  const propre = texteParle(texte);
+  if(!propre || (!voixActive && !force)) return;
+  const gen = generationVoix;
+  const ctrl = new AbortController();
+  const job = { texte: propre, gen, ctrl };
+  job.promesse = fetch('/api/voix', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ texte: propre, voix: voixId }), signal: ctrl.signal
+  }).then(r => { if(!r.ok) throw new Error('tts'); return r.blob(); });
+  job.promesse.catch(() => {});
+  fileVoix.push(job);
+  pomperVoix();
+}
+
+async function pomperVoix(){
+  if(pompeEnCours) return;
+  pompeEnCours = true;
+  while(fileVoix.length){
+    const job = fileVoix[0];
+    if(job.gen !== generationVoix){ fileVoix.shift(); continue; }
+    let blob = null;
+    try{ blob = await job.promesse; }catch(e){ blob = null; }
+    if(job.gen !== generationVoix){ if(fileVoix[0] === job) fileVoix.shift(); continue; }
+    if(blob){
+      try{ await jouerBlob(blob); }
+      catch(e){ await voixNavigateur(job.texte); }
+    } else {
+      await voixNavigateur(job.texte);
+    }
+    if(fileVoix[0] === job) fileVoix.shift();
+  }
+  pompeEnCours = false;
+}
+
+btnVoix.addEventListener('click', () => {
+  voixActive = !voixActive;
+  localStorage.setItem('capzo_voix', voixActive ? '1' : '0');
+  majBoutonVoix();
+  if(!voixActive) couperVoix();
+  else enfilerVoix("La voix est activée.");
+});
+
+fetch('/api/voix/liste').then(r => r.json()).then(d => {
+  if(!d || !d.disponible){ selVoix.classList.add('hidden'); return; }
+  selVoix.innerHTML = '';
+  (d.voix || []).forEach(v => {
+    const o = document.createElement('option');
+    o.value = v.id; o.textContent = '🗣 ' + v.nom;
+    selVoix.appendChild(o);
+  });
+  if(!(d.voix || []).some(v => v.id === voixId)) voixId = d.defaut || voixId;
+  selVoix.value = voixId;
+}).catch(() => selVoix.classList.add('hidden'));
+
+selVoix.addEventListener('change', () => {
+  voixId = selVoix.value;
+  localStorage.setItem('capzo_voix_id', voixId);
+  if(voixActive){ couperVoix(); enfilerVoix("Voici ma nouvelle voix."); }
+});
+
+/* --- lecture pendant le flux, phrase par phrase --- */
+let parleJusqua = 0;
+function voixPendantFlux(texte){
+  if(!voixActive) return;
+  const reste = (texte || '').slice(parleJusqua);
+  const m = reste.match(/^[\s\S]*?[.!?…](?=\s|$)/);
+  if(!m) return;
+  const morceau = m[0];
+  if(((morceau.match(/```/g) || []).length % 2) === 1) return;
+  parleJusqua += morceau.length;
+  enfilerVoix(morceau);
+}
+function voixFinFlux(texte){
+  if(!voixActive) return;
+  const t = texte || '';
+  const reste = t.slice(parleJusqua);
+  parleJusqua = t.length;
+  if(reste.trim()) enfilerVoix(reste);
+}
+
+/* ============================ affichage ============================ */
+function echapper(t){
+  return (t || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function markdown(t){
+  const propre = echapper(t);
+  try{ return window.marked ? marked.parse(propre) : propre.replace(/\n/g, "<br>"); }
+  catch(e){ return propre.replace(/\n/g, "<br>"); }
+}
+function versLeBas(){ chatContainer.scrollTop = chatContainer.scrollHeight; }
+
+function bulle(role){
+  const estUser = role === "user";
+  const wrapper = document.createElement("div");
+  wrapper.className = "flex items-start space-x-3" + (estUser ? " flex-row-reverse space-x-reverse" : "");
+  const avatar = document.createElement("div");
+  avatar.className = (estUser ? "bg-emerald-600" : "app-btn-primary bg-indigo-600") +
+    " text-white rounded-full h-8 w-8 flex items-center justify-center shrink-0 shadow";
+  avatar.innerHTML = '<i class="fa-solid ' + (estUser ? "fa-user" : "fa-wand-magic-sparkles") + ' text-xs"></i>';
+  const corps = document.createElement("div");
+  corps.className = (estUser ? "bg-indigo-600 text-white" : "app-bubble-ai border") +
+    " p-3.5 rounded-2xl max-w-[80%] text-sm shadow-sm leading-relaxed";
+  wrapper.appendChild(avatar); wrapper.appendChild(corps);
+  chatContainer.appendChild(wrapper);
+  versLeBas();
+  return corps;
+}
+
+function messageUtilisateur(texte, joints){
+  const corps = bulle("user");
+  corps.textContent = texte;
+  if(joints && joints.length){
+    const pjs = document.createElement("div"); pjs.className = "pjs";
+    joints.forEach(p => {
+      if(p.apercu && (p.genre === "image" || p.genre === "video")){
+        const im = document.createElement("img"); im.src = p.apercu; im.alt = p.nom; pjs.appendChild(im);
+      } else {
+        const s = document.createElement("span"); s.className = "nom";
+        s.textContent = "📄 " + p.nom; pjs.appendChild(s);
+      }
+    });
+    corps.appendChild(pjs);
+  }
+  return corps;
+}
+
+function mediaDans(corps, src, narration){
+  let im = document.createElement("img");
+  im.className = "media-img"; im.src = src; im.alt = "Média généré";
+  corps.appendChild(im);
+  versLeBas();
+  if(!narration) return;
+  const sub = document.createElement("div"); sub.className = "media-sub";
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "mt-2 text-xs px-3 py-1.5 rounded-lg border border-white/25";
+  btn.textContent = "🔊 Relancer la voix off";
+  corps.appendChild(sub); corps.appendChild(btn);
+
+  const parts = (narration.match(/[^.!?]+[.!?]*/g) || [narration]).map(t => t.trim()).filter(Boolean);
+  const synth = window.speechSynthesis;
+  let run = 0, timers = [];
+  function stop(){
+    run++; timers.forEach(clearTimeout); timers = [];
+    try{ synth && synth.cancel(); }catch(e){}
+    sub.textContent = "";
+  }
+  function play(){
+    stop();
+    const neuf = im.cloneNode(); im.replaceWith(neuf); im = neuf;
+    const moi = run; let i = 0;
+    const suivant = () => {
+      if(moi !== run) return;
+      if(i >= parts.length){ sub.textContent = ""; return; }
+      const t = parts[i++]; sub.textContent = t;
+      const repli = () => { if(moi === run) timers.push(setTimeout(suivant, Math.max(1500, t.length * 65))); };
+      if(synth && window.SpeechSynthesisUtterance){
+        try{
+          const u = new SpeechSynthesisUtterance(t);
+          u.lang = "fr-FR"; u.onend = suivant; u.onerror = repli; synth.speak(u);
+        }catch(e){ repli(); }
+      } else repli();
+    };
+    suivant();
+  }
+  btn.onclick = play;
+  play();
+}
+
+function videoDans(corps, src){
+  const v = document.createElement("video");
+  v.className = "media-img";
+  v.src = src;
+  v.controls = true;
+  v.preload = "metadata";
+  v.style.maxHeight = "420px";
+  corps.appendChild(v);
+  const a = document.createElement("a");
+  a.className = "lien-outil";
+  a.href = src;
+  a.download = "";
+  a.textContent = "⬇ Télécharger la vidéo";
+  a.style.marginTop = "8px";
+  corps.appendChild(a);
+  versLeBas();
+}
+
+function formaterStats(s){
+  const n = v => Number(v).toFixed(1).replace(".", ",");
+  const parties = [];
+  if(s.total != null) parties.push("⏱ " + n(s.total) + " s");
+  if(s.premier != null) parties.push("1er mot " + n(s.premier) + " s");
+  if(s.reflexion != null) parties.push("réflexion " + n(s.reflexion) + " s");
+  if(s.tok_s) parties.push(n(s.tok_s) + " tok/s");
+  if(s.chargement) parties.push("chargement " + n(s.chargement) + " s");
+  return parties.join(" · ");
+}
+
+/* ============================ pièces jointes ============================ */
+function dessinerPieces(){
+  previewContainer.innerHTML = "";
+  if(!pieces.length){ previewContainer.classList.add("hidden"); return; }
+  previewContainer.classList.remove("hidden");
+  pieces.forEach((p, i) => {
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    if(p.apercu){
+      const im = document.createElement("img"); im.src = p.apercu; im.alt = ""; chip.appendChild(im);
+    } else {
+      const ic = document.createElement("i");
+      ic.className = "fa-solid " + (p.genre === "video" ? "fa-film" : p.genre === "image" ? "fa-image" : "fa-file");
+      chip.appendChild(ic);
+    }
+    const nom = document.createElement("span");
+    nom.textContent = p.attente ? p.nom + " …" : p.nom;
+    chip.appendChild(nom);
+    if(!p.attente){
+      const x = document.createElement("button");
+      x.type = "button"; x.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+      x.onclick = () => { pieces.splice(i, 1); dessinerPieces(); };
+      chip.appendChild(x);
+    }
+    previewContainer.appendChild(chip);
+  });
+}
+
+async function televerser(fichier){
+  const local = { nom: fichier.name, genre: "", attente: true, apercu: "" };
+  pieces.push(local); dessinerPieces();
+  envois++;
+  try{
+    const fd = new FormData(); fd.append("fichier", fichier);
+    const r = await fetch("/api/upload", { method: "POST", body: fd });
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.error || "Envoi impossible");
+    local.genre = d.genre; local.apercu = d.apercu || ""; local.id = d.id; local.attente = false;
+  }catch(e){
+    local.attente = false; local.id = ""; local.genre = "erreur";
+    local.nom = fichier.name + " (échec)";
+  }
+  envois--;
+  dessinerPieces();
+  document.getElementById("send").disabled = busy || envois > 0;
+}
+
+function ajouterFichiers(liste){
+  Array.from(liste || []).slice(0, 6 - pieces.filter(p => !p.attente).length).forEach(f => televerser(f));
+}
+
+attachBtn.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => { ajouterFichiers(e.target.files); fileInput.value = ''; });
+
+document.body.addEventListener('dragover', e => { e.preventDefault(); chatContainer.classList.add('chat-drag'); });
+document.body.addEventListener('dragleave', e => { if(e.relatedTarget === null) chatContainer.classList.remove('chat-drag'); });
+document.body.addEventListener('drop', e => {
+  e.preventDefault(); chatContainer.classList.remove('chat-drag');
+  if(e.dataTransfer && e.dataTransfer.files.length) ajouterFichiers(e.dataTransfer.files);
+});
+
+/* ============================ cerveaux ============================ */
+function rafraichirModeles(tentative){
+  tentative = tentative || 0;
+  return fetch("/api/modeles", { cache: "no-store" }).then(r => r.json()).then(d => {
+    if(!d || !Array.isArray(d.modeles)) return;
+    // Ollama peut repondre lentement au demarrage : on reessaie si la liste est vide.
+    if(!d.modeles.length && tentative < 4){
+      setTimeout(() => rafraichirModeles(tentative + 1), 1500 + tentative * 1500);
+      return;
+    }
+    const garde = selMoteur.value;
+    selMoteur.innerHTML = '<option value="auto">🧠 Auto</option><option value="online">🌐 En ligne</option>';
+    d.modeles.forEach(m => {
+      const o = document.createElement("option");
+      o.value = m.nom;
+      o.textContent = "💻 " + m.nom + (m.vision ? " 👁" : "");
+      selMoteur.appendChild(o);
+    });
+    if(garde && Array.from(selMoteur.options).some(o => o.value === garde)) selMoteur.value = garde;
+  }).catch(() => {});
+}
+rafraichirModeles();
+
+function modeDemande(){
+  const v = selMoteur.value || "auto";
+  if(v === "online") return { mode: "online", modele: null };
+  if(v === "auto") return { mode: "auto", modele: null };
+  return { mode: "local", modele: v };
+}
+
+let catOuvert = false;
+async function chargerCatalogue(){
+  catalogue.innerHTML = '<span class="opacity-60">Chargement…</span>';
+  try{
+    const d = await (await fetch("/api/cerveaux")).json();
+    const restants = (d.catalogue || []).filter(m => !m.installe);
+    catalogue.innerHTML = "";
+    if(!restants.length){
+      catalogue.innerHTML = '<span class="opacity-70">Tous les cerveaux proposés sont déjà installés ✅</span>';
+      return;
+    }
+    restants.forEach(m => {
+      const carte = document.createElement("div");
+      carte.className = "cerveau-card";
+      carte.innerHTML = '<b>' + echapper(m.nom) + '</b><br><span class="opacity-60">' +
+                        echapper(m.taille + " · " + m.note) + '</span><br>';
+      const bt = document.createElement("button");
+      bt.textContent = "Installer";
+      bt.onclick = () => installerCerveau(m.nom, bt);
+      carte.appendChild(bt);
+      catalogue.appendChild(carte);
+    });
+  }catch(e){
+    catalogue.innerHTML = '<span class="opacity-60">Catalogue indisponible.</span>';
+  }
+}
+async function installerCerveau(nom, bouton){
+  bouton.disabled = true; bouton.textContent = "installation…";
+  await fetch("/api/installer", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nom }) }).catch(() => {});
+  const t = setInterval(async () => {
+    try{
+      const d = await (await fetch("/api/cerveaux")).json();
+      const m = (d.catalogue || []).find(x => x.nom === nom);
+      if(m && m.installe){ clearInterval(t); bouton.textContent = "installé ✅"; rafraichirModeles(); }
+    }catch(e){}
+  }, 5000);
+}
+btnCerveau.addEventListener('click', async () => {
+  catOuvert = !catOuvert;
+  catalogue.classList.toggle('hidden', !catOuvert);
+  if(catOuvert) await chargerCatalogue();
+});
+
+/* ============================ envoi ============================ */
+async function envoyer(){
+  const joints = pieces.filter(p => p.id);
+  const texte = userInput.value.trim();
+  if((!texte && !joints.length) || busy || envois) return;
+
+  const corps = texte || "Analyse ce fichier, s'il te plaît.";
+  busy = true;
+  couperVoix();
+  parleJusqua = 0;
+  document.getElementById("send").disabled = true;
+  userInput.value = "";
+  messageUtilisateur(corps, joints);
+  history.push({ role: "user", content: corps });
+  pieces = []; dessinerPieces();
+
+  const bas = texte.toLowerCase();
+  loadingText.textContent = (bas.includes("vidéo") || bas.includes("animation"))
+    ? "capzo ia prépare l'animation…" : "capzo ia rédige la réponse…";
+  typingIndicator.classList.remove('hidden');
+  versLeBas();
+
+  let corpsBulle = null, corpsTexte = null, corpsOutils = null, complet = "", media = null, erreur = "", stats = null;
+
+  function assurerBulle(){
+    if(corpsBulle && corpsTexte) return;
+    typingIndicator.classList.add('hidden');
+    corpsBulle = bulle("assistant");
+    corpsTexte = document.createElement("div");
+    corpsTexte.className = "md";
+    corpsOutils = document.createElement("div");
+    corpsOutils.className = "outils-ligne";
+    corpsBulle.appendChild(corpsTexte);
+    corpsBulle.appendChild(corpsOutils);
+  }
+
+  try{
+    const choix = modeDemande();
+    const r = await fetch("/api/chat/stream", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: history, mode: choix.mode, modele: choix.modele,
+                             reflexion: selReflexion.value, profil: selProfil.value,
+                             fichiers: joints.map(p => p.id) })
+    });
+    if(!r.ok) throw new Error("Erreur serveur " + r.status);
+
+    function traiterBloc(bloc){
+      const ligne = bloc.split("\n").find(l => l.indexOf("data: ") === 0);
+      if(!ligne) return;
+      let ev; try{ ev = JSON.parse(ligne.slice(6)); }catch(e){ return; }
+
+      if(ev.type === "delta"){
+        assurerBulle();
+        complet += ev.text || "";
+        corpsTexte.innerHTML = markdown(complet);
+        voixPendantFlux(complet);
+        versLeBas();
+      } else if(ev.type === "attente"){
+        loadingText.textContent = ev.text || "…";
+      } else if(ev.type === "outil"){
+        assurerBulle();
+        const b = document.createElement("span");
+        b.className = "outil-badge";
+        b.textContent = (ev.ok ? "🔌 " : "⚠️ ") + (ev.nom || "outil");
+        corpsOutils.appendChild(b);
+        versLeBas();
+      } else if(ev.type === "ouvrir"){
+        assurerBulle();
+        const note = document.createElement("div");
+        note.className = "outil-badge";
+        note.textContent = ev.texte || "Ouverture…";
+        corpsOutils.appendChild(note);
+        if(ev.url){
+          const dedans = /^(tel|sms|mailto):/.test(ev.url);
+          setTimeout(() => {
+            if(dedans) window.location.href = ev.url;
+            else window.open(ev.url, "_blank", "noopener");
+          }, 700);
+        }
+      } else if(ev.type === "lien"){
+        assurerBulle();
+        if(ev.url){
+          const a = document.createElement("a");
+          a.className = "lien-outil";
+          a.href = ev.url;
+          if(/^https?:/.test(ev.url)) a.target = "_blank";
+          a.textContent = ev.titre || "Ouvrir";
+          corpsOutils.appendChild(a);
+        }
+      } else if(ev.type === "message"){
+        media = ev.payload || {};
+        complet = media.text || complet;
+        assurerBulle();
+        corpsTexte.innerHTML = markdown(complet);
+      } else if(ev.type === "error"){
+        erreur = ev.text || "Erreur";
+      } else if(ev.type === "stats"){
+        stats = ev.stats;
+      }
+    }
+
+    if(r.body && typeof r.body.getReader === "function"){
+      const lecteur = r.body.getReader(), dec = new TextDecoder();
+      let tampon = "";
+      while(true){
+        const { value, done } = await lecteur.read();
+        if(done) break;
+        tampon += dec.decode(value, { stream: true });
+        let i;
+        while((i = tampon.indexOf("\n\n")) >= 0){
+          traiterBloc(tampon.slice(0, i));
+          tampon = tampon.slice(i + 2);
+        }
+      }
+    } else {
+      // Repli pour les anciens Safari : pas de flux, on lit la reponse entiere.
+      const tout = await r.text();
+      tout.split("\n\n").forEach(traiterBloc);
+    }
+  }catch(e){ erreur = e.message || "Une erreur est survenue."; }
+
+  voixFinFlux(complet);
+  if(erreur && !complet) enfilerVoix(erreur);
+  typingIndicator.classList.add('hidden');
+  if(!corpsBulle && (complet || media || erreur)) assurerBulle();
+
+  if(corpsBulle){
+    if(media && media.animation){
+      mediaDans(corpsBulle, "data:image/svg+xml;charset=utf-8," + encodeURIComponent(media.animation.svg), media.animation.narration);
+    } else if(media && media.image){
+      mediaDans(corpsBulle, media.image, "");
+    } else if(media && media.video){
+      videoDans(corpsBulle, media.video);
+    } else if(erreur && !complet){
+      if(!corpsTexte) assurerBulle();
+      corpsTexte.innerHTML = markdown(erreur);
+    }
+    if(stats){
+      const ligne = document.createElement("div");
+      ligne.className = "stats-line";
+      ligne.textContent = formaterStats(stats);
+      corpsBulle.appendChild(ligne);
+    }
+  }
+
+  if(complet || media){
+    history.push({ role: "assistant", content: (complet || "") +
+      (media && media.animation ? " [une animation a été générée]" :
+       media && media.image ? " [une image a été générée]" :
+       media && media.video ? " [une vidéo a été générée]" : "") });
+  }
+  busy = false;
+  document.getElementById("send").disabled = envois > 0;
+  userInput.focus();
+  versLeBas();
+}
+
+chatForm.addEventListener('submit', e => { e.preventDefault(); envoyer(); });
+userInput.addEventListener('keydown', e => { if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); envoyer(); } });
+
+clearBtn.addEventListener('click', () => {
+  history = []; pieces = []; dessinerPieces();
+  couperVoix();
+  chatContainer.innerHTML = `
+    <div class="flex items-start space-x-3">
+      <div class="app-btn-primary bg-indigo-600 text-white rounded-full h-8 w-8 flex items-center justify-center shrink-0 shadow">
+        <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+      </div>
+      <div class="app-bubble-ai border p-3.5 rounded-2xl max-w-[80%] text-sm shadow-sm leading-relaxed">
+        Discussion réinitialisée ! Raconte-moi, quelle histoire veux-tu que je crée ?
+      </div>
+    </div>`;
+});
+
+/* ============================ micro ============================ */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let reco = null;
+if(!SR){
+  micBtn.disabled = true;
+  micBtn.title = "Reconnaissance vocale non supportée par ce navigateur";
+} else {
+  micBtn.addEventListener('click', () => {
+    if(reco){ reco.stop(); return; }
+    reco = new SR(); reco.lang = "fr-FR"; reco.interimResults = false;
+    reco.onstart = () => { micBtn.style.background = "#4f46e5"; micBtn.style.color = "#fff"; };
+    reco.onend = () => { micBtn.style.background = ""; micBtn.style.color = ""; reco = null; };
+    reco.onerror = ev => {
+      micBtn.style.background = ""; micBtn.style.color = ""; reco = null;
+      userInput.placeholder = "Micro : " + ev.error;
+    };
+    reco.onresult = ev => { userInput.value = ev.results[0][0].transcript; envoyer(); };
+    try{ reco.start(); }catch(e){ reco = null; }
+  });
+}
+
+/* ============================ réveil « Hey Capzo » ============================ */
+function bip(){
+  try{
+    const C = window.AudioContext || window.webkitAudioContext;
+    const ctx = new C();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.value = 880; g.gain.value = 0.07;
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + 0.13);
+    setTimeout(() => { try{ ctx.close(); }catch(e){} }, 500);
+  }catch(e){}
+}
+
+let reveilActif = localStorage.getItem('capzo_reveil') === '1';
+let recoVeille = null, captureVocale = false, minuterieCapture = null;
+
+function majBoutonReveil(){
+  const b = document.getElementById('btn-reveil');
+  if(!b) return;
+  b.classList.toggle('reveil-on', reveilActif);
+  b.title = reveilActif ? 'Réveil actif — dis « Hey Capzo »' : 'Activer le réveil « Hey Capzo »';
+}
+majBoutonReveil();
+
+function declencherReveil(){
+  captureVocale = true;
+  bip();
+  couperVoix();
+  enfilerVoix('Comment puis-je vous être utile ?', true);
+  clearTimeout(minuterieCapture);
+  minuterieCapture = setTimeout(() => { captureVocale = false; }, 9000);
+}
+
+function demarrerReveil(){
+  if(!SR || !reveilActif || recoVeille) return;
+  try{
+    recoVeille = new SR();
+    recoVeille.lang = 'fr-FR';
+    recoVeille.continuous = true;
+    recoVeille.interimResults = true;
+    recoVeille.onresult = e => {
+      if(!audioVoix.paused) return;   // on ne s'écoute pas parler
+      let texte = '';
+      for(let i = e.resultIndex; i < e.results.length; i++) texte += ' ' + e.results[i][0].transcript;
+      texte = texte.toLowerCase().replace(/[.,!?]/g, ' ').replace(/\s+/g, ' ').trim();
+      if(!captureVocale && /(hey|hé|hei|et)\s+capzo/.test(texte)){
+        declencherReveil();
+        return;
+      }
+      const dernier = e.results[e.results.length - 1];
+      if(captureVocale && dernier && dernier.isFinal){
+        const ordre = texte.replace(/^\s*(hey|hé|et)\s+capzo\s*/, '').trim();
+        if(ordre.length > 1){
+          captureVocale = false;
+          clearTimeout(minuterieCapture);
+          userInput.value = ordre;
+          envoyer();
+        }
+      }
+    };
+    recoVeille.onend = () => {
+      recoVeille = null;
+      if(reveilActif) setTimeout(demarrerReveil, 400);
+    };
+    recoVeille.onerror = ev => {
+      recoVeille = null;
+      if(ev.error === 'not-allowed' || ev.error === 'service-not-allowed'){
+        reveilActif = false;
+        localStorage.setItem('capzo_reveil', '0');
+        majBoutonReveil();
+      } else if(reveilActif){
+        setTimeout(demarrerReveil, 1500);
+      }
+    };
+    recoVeille.start();
+  }catch(e){ recoVeille = null; }
+}
+
+function arreterReveil(){
+  reveilActif = false;
+  localStorage.setItem('capzo_reveil', '0');
+  majBoutonReveil();
+  if(recoVeille){ try{ recoVeille.stop(); }catch(e){} recoVeille = null; }
+}
+
+document.getElementById('btn-reveil').addEventListener('click', () => {
+  if(reveilActif){ arreterReveil(); return; }
+  if(!SR){ alert("La reconnaissance vocale n'est pas disponible dans ce navigateur."); return; }
+  reveilActif = true;
+  localStorage.setItem('capzo_reveil', '1');
+  majBoutonReveil();
+  demarrerReveil();
+  declencherReveil();
+});
+
+/* ============================ panneau connecteurs ============================ */
+function fermerPanneau(){
+  const p = document.getElementById('panneau');
+  if(p) p.remove();
+}
+function ouvrirPanneau(html){
+  fermerPanneau();
+  const p = document.createElement('div');
+  p.className = 'panneau';
+  p.id = 'panneau';
+  p.innerHTML = '<div class="panneau-boite">' + html +
+    '<div style="text-align:right;margin-top:14px">' +
+    '<button class="lien-outil" id="fermer-panneau" type="button">Fermer</button></div></div>';
+  document.body.appendChild(p);
+  p.addEventListener('click', e => { if(e.target === p) fermerPanneau(); });
+  document.getElementById('fermer-panneau').onclick = fermerPanneau;
+}
+
+document.getElementById('btn-connecteurs').addEventListener('click', async () => {
+  ouvrirPanneau('<h3>🔌 Connecteurs</h3><p style="opacity:.7">Chargement…</p>');
+  let d = {};
+  try{ d = await (await fetch('/api/connecteurs')).json(); }catch(e){}
+  const mail = d.mail || {}, ag = d.agenda || {}, ig = d.instagram || {}, g = d.google || {};
+  const dot = ok => '<span class="pastille" style="background:' + (ok ? '#10b981' : '#f59e0b') + '"></span>';
+  const html =
+    '<h3>🔌 Connecteurs</h3>' +
+    '<div class="connecteur"><b>' + dot(g.pret) + 'Compte Google (1 clic)</b><br>' +
+      (g.pret
+        ? 'Connecté : ' + echapper(g.email || 'compte Google') +
+          '<br><button class="lien-outil" id="btn-deco-google" type="button">Déconnecter</button>'
+        : (g.configure
+            ? 'Non connecté.<br><button class="lien-outil" id="btn-co-google" type="button">Connecter mon compte Google</button>' +
+              '<br><span style="opacity:.7">Un clic : Google demande l\'autorisation, puis Capzo lit tes mails et ton agenda (sans mot de passe d\'application).</span>'
+            : 'Non configuré côté serveur.<br><code>CAPZO_GOOGLE_CLIENT_ID</code> et <code>CAPZO_GOOGLE_CLIENT_SECRET</code> dans <code>.env</code>.<br>Voir README.')) +
+      '</div>' +
+    '<div class="connecteur"><b>' + dot(mail.pret) + 'Messagerie</b><br>' +
+      (mail.pret
+        ? 'Connecté : ' + echapper(mail.adresse || '')
+        : 'Non configurée.<br><code>CAPZO_MAIL_ADRESSE</code> et <code>CAPZO_MAIL_MDP</code> dans <code>.env</code>.' +
+          '<br>Google : crée un <b>mot de passe d\'application</b> (2FA obligatoire), pas ton mot de passe habituel.') +
+      '<br><span style="opacity:.7">Essaie : « lis mes derniers mails » · « envoie un mail à … »</span></div>' +
+    '<div class="connecteur"><b>' + dot(ag.pret) + 'Agenda</b><br>' +
+      (ag.pret
+        ? 'Lecture activée' + (ag.ecriture ? ' + écriture CalDAV.' : ' (écriture : fichier .ics en un clic).')
+        : 'Non configuré.<br><code>CAPZO_AGENDA_ICS</code> = adresse iCal secrète de ton agenda.') +
+      '<br><span style="opacity:.7">Essaie : « mes rendez-vous cette semaine » · « ajoute un rdv mardi 14h »</span></div>' +
+    '<div class="connecteur"><b>' + dot(ig.pret) + 'Instagram</b><br>' +
+      (ig.pret
+        ? 'Compte : ' + echapper(ig.compte || '')
+        : 'Non configuré.<br><code>CAPZO_IG_USER</code> + <code>CAPZO_IG_TOKEN</code> (compte professionnel + app Meta).') +
+      '<br><span style="opacity:.7">Essaie : « stats de mon Instagram » · « publie ce Reel »</span></div>' +
+    '<div class="connecteur"><b>' + dot(d.cloud) + 'Moteur rapide</b><br>' +
+      (d.cloud
+        ? 'Clé API active : ' + echapper(d.modele_cloud || '')
+        : 'Aucune clé API : les réponses passent par Ollama (lent sur ce PC).') + '</div>' +
+    '<div class="connecteur"><b>' + dot(reveilActif) + 'Réveil « Hey Capzo »</b><br>' +
+      (reveilActif ? 'Écoute en cours.' : 'Désactivé.') +
+      '<br><span style="opacity:.7">Fonctionne quand Capzo est ouvert. Installe-le sur l\'écran d\'accueil pour l\'utiliser comme une app.</span></div>';
+  ouvrirPanneau(html);
+  setTimeout(() => {
+    const co = document.getElementById('btn-co-google');
+    if(co) co.onclick = () => { location.href = '/api/google/connexion'; };
+    const deco = document.getElementById('btn-deco-google');
+    if(deco) deco.onclick = async () => {
+      await fetch('/api/google/deconnexion', { method: 'POST' });
+      panneauConnecteurs();
+    };
+  }, 80);
+});
+
+/* ============================ état du moteur ============================ */
+function rafraichirEtat(){
+  fetch("/api/etat").then(r => r.json()).then(d => {
+    const b = document.getElementById("moteur");
+    if(!b || !d) return;
+    const m = d.moteur || "";
+    if(m.indexOf("local") === 0){ b.textContent = "🧠 " + d.modele + " (local)"; }
+    else if(m.indexOf("cloud") === 0){ b.textContent = "☁️ " + (d.modele || "en ligne"); }
+    else { b.textContent = "🌐 en ligne"; }
+  }).catch(() => {});
+}
+rafraichirEtat();
+setInterval(rafraichirEtat, 15000);
+fetch("/api/chauffe").catch(() => {});
+
+/* ============================ installation (PWA) ============================ */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+if(reveilActif) setTimeout(demarrerReveil, 1200);
+
+/* Banniere d'installation sur mobile */
+let promptInstallation = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  promptInstallation = e;
+  if(!window.matchMedia('(display-mode: standalone)').matches) afficherBanniereInstallation();
+});
+function afficherBanniereInstallation(){
+  if(document.getElementById('install-banner')) return;
+  const b = document.createElement('div');
+  b.id = 'install-banner';
+  b.className = 'install-banner';
+  b.innerHTML = '<span style="flex:1">📲 Installe Capzo sur ton téléphone pour un accès rapide</span><button id="install-btn" type="button">Installer</button><button id="install-close" type="button" style="background:transparent;color:#fff;padding:4px 8px;border:none;font-size:16px">✕</button>';
+  document.body.appendChild(b);
+  document.getElementById('install-btn').onclick = async () => {
+    if(!promptInstallation) return;
+    promptInstallation.prompt();
+    try{ await promptInstallation.userChoice; }catch(e){}
+    promptInstallation = null;
+    b.remove();
+  };
+  document.getElementById('install-close').onclick = () => b.remove();
+}
+window.addEventListener('appinstalled', () => { const b = document.getElementById('install-banner'); if(b) b.remove(); });
+
+/* Retour de la connexion Google */
+try{
+  const q = new URLSearchParams(location.search);
+  if(q.get('google') === 'ok'){
+    alert('✅ Compte Google connecté' + (q.get('email') ? ' : ' + decodeURIComponent(q.get('email')) : '') + '.');
+  } else if(q.get('google') === 'echec'){
+    alert('Connexion Google échouée : ' + decodeURIComponent(q.get('msg') || ''));
+  } else if(q.get('google') === 'refuse'){
+    alert('Connexion Google annulée.');
+  }
+  if(q.has('google')) history.replaceState({}, '', location.pathname);
+}catch(e){}
+
+/* Fichiers partagés depuis une autre app (Android / iOS) */
+try{
+  const brut = localStorage.getItem('capzo_partage');
+  if(brut){
+    localStorage.removeItem('capzo_partage');
+    (JSON.parse(brut) || []).slice(0, 4).forEach(async id => {
+      try{
+        const r = await fetch('/api/piece/' + encodeURIComponent(id));
+        if(!r.ok) return;
+        const p = await r.json();
+        if(p && p.id){
+          pieces.push({ nom: p.nom, genre: p.genre, apercu: p.apercu || '', id: p.id });
+          dessinerPieces();
+        }
+      }catch(e){}
+    });
+  }
+}catch(e){}
+
+</script>
+</body>
+</html>

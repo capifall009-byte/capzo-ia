@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: capzo-ia
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --timeout 300 --workers 1 --threads 8
+    envVars:
+      - key: CAPZO_MOTEUR
+        value: cloud
+      - key: CAPZO_API_URL
+        value: https://api.groq.com/openai/v1
+      - key: CAPZO_API_MODEL
+        value: qwen/qwen3.8-27b
+      - key: CAPZO_API_KEY
+        sync: false
