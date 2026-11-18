@@ -685,6 +685,15 @@ def _enrichir(demande):
     except Exception:
         pass
     try:
+        urls = re.findall(r"https?://[^\s<>\"']+", demande or "")
+        if urls:
+            texte_page, _err = internet.lire_page(urls[0], max_chars=3500)
+            if texte_page:
+                morceaux.append("=== PAGE WEB FOURNIE PAR L'UTILISATEUR ===\nURL : "
+                                + urls[0] + "\nContenu : " + texte_page)
+    except Exception:
+        pass
+    try:
         if internet.faut_chercher(demande):
             ctx_web = internet.apercu(demande)
             if ctx_web:
