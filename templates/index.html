@@ -1151,15 +1151,6 @@ async function panneauConnecteurs(){
     parts.push('Non configure.<br><code>CAPZO_AGENDA_ICS</code> = adresse iCal secrete.');
   }
   parts.push('</div>');
-  // Instagram
-  parts.push('<div class="connecteur"><b>' + dot(ig.pret) + 'Instagram</b><br>');
-  if (ig.pret) {
-    parts.push('Compte : ' + echapper(ig.compte || ''));
-  } else {
-    parts.push('Non configure.<br><code>CAPZO_IG_USER</code> + <code>CAPZO_IG_TOKEN</code>.');
-  }
-  parts.push('</div>');
-  // Sociaux
   // Instagram OAuth
   parts.push('<div class="connecteur"><b>' + dot(soc.instagram && soc.instagram.pret) + 'Instagram (OAuth Meta)</b><br>');
   if (soc.instagram && soc.instagram.pret) {
@@ -1168,7 +1159,9 @@ async function panneauConnecteurs(){
   } else if (soc.instagram && soc.instagram.configure) {
     parts.push('Pret a connecter.<br><button class="lien-outil" data-social="instagram" type="button">Connecter Instagram</button>');
   } else {
-    parts.push('Non configure cote serveur.');
+    parts.push('Aucune app Meta configuree : colle simplement un jeton d\'acces Instagram (compte pro).' +
+      '<br><input type="password" class="champ-jeton" data-jeton="instagram" placeholder="Colle ton jeton d\'acces" style="width:100%;margin-top:6px;padding:8px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e2e8f0">' +
+      '<button class="lien-outil" data-jeton-ok="instagram" type="button" style="margin-top:6px">Enregistrer le jeton</button>');
   }
   parts.push('</div>');
   // TikTok
@@ -1179,7 +1172,9 @@ async function panneauConnecteurs(){
   } else if (soc.tiktok && soc.tiktok.configure) {
     parts.push('Pret a connecter.<br><button class="lien-outil" data-social="tiktok" type="button">Connecter TikTok</button>');
   } else {
-    parts.push('Non configure cote serveur.');
+    parts.push('Aucune app TikTok configuree : colle un jeton d\'acces TikTok si tu en as un.' +
+      '<br><input type="password" class="champ-jeton" data-jeton="tiktok" placeholder="Colle ton jeton d\'acces" style="width:100%;margin-top:6px;padding:8px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e2e8f0">' +
+      '<button class="lien-outil" data-jeton-ok="tiktok" type="button" style="margin-top:6px">Enregistrer le jeton</button>');
   }
   parts.push('</div>');
   // Windsor
@@ -1237,6 +1232,24 @@ async function panneauConnecteurs(){
       b.onclick = async () => {
         await fetch('/api/social/' + encodeURIComponent(b.dataset.deco) + '/deconnexion', { method: 'POST' });
         panneauConnecteurs();
+      };
+    });
+    document.querySelectorAll('[data-jeton-ok]').forEach(b => {
+      b.onclick = async () => {
+        const svc = b.dataset.jetonOk;
+        const inp = document.querySelector('[data-jeton="' + svc + '"]');
+        const token = inp ? inp.value.trim() : '';
+        if(!token){ alert('Colle un jeton avant de valider.'); return; }
+        b.disabled = true;
+        try{
+          const r = await fetch('/api/social/' + encodeURIComponent(svc) + '/token', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+          });
+          const j = await r.json().catch(() => ({}));
+          if(!r.ok){ alert(j.error || 'Jeton refuse.'); b.disabled = false; return; }
+          panneauConnecteurs();
+        }catch(e){ alert('Impossible d\'enregistrer le jeton.'); b.disabled = false; }
       };
     });
     const test = document.getElementById('btn-test-windsor');
