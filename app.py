@@ -49,7 +49,7 @@ def _charger_env(chemin=None):
 _charger_env()
 
 from capzo import (agent, anim, apple_auth, auth, connecteurs, fichiers, github_auth,  # noqa: E402
-                   google_auth, images, instagram, internet, llm, maths, memoire, quiz,
+                   google_auth, hermes, images, instagram, internet, llm, maths, memoire, quiz,
                    social, video, voix)
 
 UPLOADS = os.path.join(BASE, "uploads")
@@ -808,6 +808,10 @@ def api_chat():
     enrichi = _enrichir(brut)
     if enrichi:
         memoire_ctx = (memoire_ctx + "\n\n" + enrichi).strip()
+    if profil == "hermes":
+        journal = hermes.contexte()
+        if journal:
+            memoire_ctx = (memoire_ctx + "\n" + journal).strip()
     memoire.ajouter_message("user", brut)
     try:
         type_reponse, contenu = llm.decide(messages, mode=mode, modele=modele, profil=profil,
@@ -817,6 +821,8 @@ def api_chat():
 
     if type_reponse == "text":
         memoire.ajouter_message("assistant", contenu)
+        if profil == "hermes":
+            hermes.apprendre(brut, contenu)
         reponse = {"text": contenu}
         m = re.search(r"R[ée]essaie dans (\d+) s", contenu or "")
         if m:
@@ -899,6 +905,10 @@ def api_chat_stream():
         enrichi = _enrichir(brut)
         if enrichi:
             system = system + "\n\n" + enrichi
+        if profil == "hermes":
+            journal = hermes.contexte()
+            if journal:
+                system = system + "\n" + journal
 
     def evt(charge):
         return "data: " + json.dumps(charge, ensure_ascii=False) + "\n\n"
@@ -942,8 +952,10 @@ def api_chat_stream():
                 yield evt({"type": "message", "payload": pret})
             return
 
-        if agent.detecter_intention(demande):
-            yield evt({"type": "attente", "text": "Je consulte tes connecteurs…"})
+        if agent.detecter_intention(demande) or profil == "hermes":
+            attente = ("Je passe en mode Hermes : outils et mémoire…" if profil == "hermes"
+                       else "Je consulte tes connecteurs…")
+            yield evt({"type": "attente", "text": attente})
             dernier_texte = ""
             try:
                 for genre, valeur in agent.repondre(messages, system, mode=mode,
@@ -959,6 +971,8 @@ def api_chat_stream():
             except Exception as e:
                 yield evt({"type": "error", "text": f"Connecteur indisponible ({e})."})
             memoire.ajouter_message("assistant", dernier_texte)
+            if profil == "hermes":
+                hermes.apprendre(demande, dernier_texte)
             yield evt({"type": "fin"})
             return
 
@@ -975,6 +989,8 @@ def api_chat_stream():
         except Exception as e:
             yield evt({"type": "error", "text": f"Moteur IA indisponible ({e})."})
         memoire.ajouter_message("assistant", dernier_texte)
+        if profil == "hermes":
+            hermes.apprendre(demande, dernier_texte)
         yield evt({"type": "fin"})
 
     return Response(flux(), mimetype="text/event-stream",
@@ -1014,6 +1030,12 @@ def api_intelligences():
             "uploads_verifies": True,
         },
     })
+
+
+@app.route("/api/hermes/etat")
+def api_hermes_etat():
+    """Journal d'apprentissage du mode Hermes (isolé par visiteur)."""
+    return jsonify(hermes.etat())
 
 
 @app.route("/api/cerveaux")

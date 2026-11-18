@@ -38,15 +38,19 @@ def _lire():
         if isinstance(d, dict):
             d.setdefault("faits", [])
             d.setdefault("historique", [])
+            d.setdefault("lecons", [])  # journal d'apprentissage Hermes
             return d
     except Exception:
         pass
-    return {"faits": [], "historique": []}
+    return {"faits": [], "historique": [], "lecons": []}
 
 
 def _ecrire(d):
     try:
         texte = json.dumps(d, ensure_ascii=False)
+        while len(texte) > MAX_CHARS and d.get("lecons"):
+            d["lecons"].pop(0)
+            texte = json.dumps(d, ensure_ascii=False)
         while len(texte) > MAX_CHARS and d.get("historique"):
             d["historique"].pop(0)
             texte = json.dumps(d, ensure_ascii=False)
@@ -174,4 +178,6 @@ def contexte():
 def etat():
     d = _lire()
     return {"faits": d.get("faits", []), "historique": d.get("historique", []),
-            "nombre": len(d.get("faits", [])) + len(d.get("historique", []))}
+            "lecons": d.get("lecons", []),
+            "nombre": (len(d.get("faits", [])) + len(d.get("historique", [])) +
+                       len(d.get("lecons", [])))}

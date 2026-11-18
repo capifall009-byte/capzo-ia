@@ -1247,6 +1247,7 @@ async function panneauConnecteurs(){
   ouvrirPanneau('<h3>Connecteurs</h3><p style="opacity:.7">Chargement…</p>');
   let d = {};
   try{ d = await (await fetch('/api/connecteurs')).json(); }catch(e){}
+  try{ window.__hermesEtat = await (await fetch('/api/hermes/etat')).json(); }catch(e){ window.__hermesEtat = {}; }
   const mail = d.mail || {}, ag = d.agenda || {}, ig = d.instagram || {}, g = d.google || {}, soc = d.sociaux || {};
   const dot = ok => '<span class="pastille" style="background:' + (ok ? '#10b981' : '#f59e0b') + '"></span>';
   const parts = [];
@@ -1325,9 +1326,12 @@ async function panneauConnecteurs(){
   parts.push('<span style="opacity:.7">Assistant personnel open source.</span><br>');
   parts.push('<a class="lien-outil" href="https://github.com/open-jarvis/OpenJarvis" target="_blank">Voir le projet</a>');
   parts.push('</div>');
-  // Hermes
-  parts.push('<div class="connecteur"><b>Hermes Agent (GitHub)</b><br>');
-  parts.push('<span style="opacity:.7">Agent qui apprend avec toi.</span><br>');
+  // Hermes (inspire du projet NousResearch, integre dans Capzo)
+  const hermesEtat = window.__hermesEtat || {};
+  parts.push('<div class="connecteur"><b>' + dot(true) + 'Hermes — agent qui apprend avec toi</b><br>');
+  parts.push('<span style="opacity:.7">Integre dans Capzo : memoire, outils et journal d\'apprentissage. ' +
+    (hermesEtat.nombre || 0) + ' lecon(s) retenue(s).</span><br>');
+  parts.push('<button class="lien-outil" id="btn-hermes" type="button">Activer le mode Hermes</button> ');
   parts.push('<a class="lien-outil" href="https://github.com/NousResearch/hermes-agent" target="_blank">Voir le projet</a>');
   parts.push('</div>');
   // Moteur
@@ -1394,6 +1398,16 @@ async function panneauConnecteurs(){
         const j = await (await fetch('/api/social/windsor/test')).json();
         if (zone) zone.textContent = ' ' + (j.message || '');
       } catch (e) { if (zone) zone.textContent = ' test impossible.'; }
+    };
+    const hermes = document.getElementById('btn-hermes');
+    if (hermes) hermes.onclick = () => {
+      selProfil.value = 'hermes';
+      appliquerProfil();
+      localStorage.setItem('capzo_profil', 'hermes');
+      fermerPanneau();
+      userInput.focus();
+      const note = bulle('assistant');
+      note.innerHTML = markdown('🧬 **Mode Hermes activé** : je retiens ce que tu m’apprends et je m’adapte à toi.');
     };
   }, 80);
 }
