@@ -294,6 +294,7 @@ def api_connecteurs():
         "mail": connecteurs.etat()["mail"],
         "agenda": connecteurs.etat()["agenda"],
         "instagram": instagram.etat(),
+        "google": google_auth.etat(),
         "sociaux": social.etat(),
         "session": auth.etat(),
         "outils": [t["function"]["name"] for t in agent.OUTILS],

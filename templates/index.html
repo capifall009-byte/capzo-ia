@@ -123,18 +123,31 @@
   #chat-container .md pre { background: rgba(0,0,0,.28); border: 1px solid rgba(127,127,127,.16); }
 
   /* Composeur façon ChatGPT */
-  #chat-form { max-width: var(--ui-max) !important; border: 1px solid rgba(127,127,127,.25); border-radius: 20px; padding: 7px 8px; gap: 5px; background: rgba(127,127,127,.06); }
+  #chat-form { max-width: var(--ui-max) !important; border: 1px solid rgba(127,127,127,.25); border-radius: 20px; padding: 7px 8px; gap: 5px; background: rgba(127,127,127,.06); position: relative; flex-wrap: nowrap !important; }
   body.theme-light #chat-form { background: #fff; border-color: #e2e2e7; box-shadow: 0 8px 28px rgba(0,0,0,.06); }
-  #user-input { background: transparent !important; border: 0 !important; box-shadow: none !important; font-size: 14px !important; }
+  #chat-form > button { flex: 0 0 auto !important; }
+  #user-input { background: transparent !important; border: 0 !important; box-shadow: none !important; font-size: 14px !important;
+    min-width: 0 !important; flex: 1 1 0 !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #user-input::placeholder { color: inherit; opacity: .55; text-overflow: ellipsis; }
   #send { border-radius: 14px !important; padding: 11px 14px !important; }
   #raccourcis { max-width: var(--ui-max) !important; border: 0 !important; }
+
+  /* Menu « + » photos / vidéos / fichiers */
+  .add-menu { position: absolute; left: 6px; bottom: calc(100% + 8px); z-index: 80;
+    display: flex; flex-direction: column; gap: 2px; min-width: 190px; padding: 7px;
+    background: #1e293b; border: 1px solid rgba(148,163,184,.3); border-radius: 14px;
+    box-shadow: 0 14px 40px rgba(0,0,0,.35); }
+  body.theme-light .add-menu { background: #fff; border-color: #d8dce5; }
+  .add-menu button { display: flex; align-items: center; gap: 9px; width: 100%; text-align: left;
+    padding: 10px 11px; border-radius: 10px; font-size: 13px; color: inherit; background: transparent; cursor: pointer; }
+  .add-menu button:hover { background: rgba(99,102,241,.16); }
 
   /* Mobile : pas de zoom auto iOS, respect de l'encoche et pouce facile */
   @media (max-width: 820px) {
     #user-input { font-size: 16px !important; }
     .app-footer { padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important; }
     #chat-container { padding-bottom: calc(16px + env(safe-area-inset-bottom)) !important; }
-    #attach-btn, #mic, #cam-btn, #send { min-width: 44px; min-height: 44px; }
+    #add-btn, #mic, #send { min-width: 44px; min-height: 44px; }
   }
 
   /* Écran d'accueil */
@@ -309,17 +322,27 @@
     <form id="chat-form" class="max-w-3xl mx-auto flex items-center gap-2">
       <input type="file" id="file-input" class="hidden" multiple
              accept="image/*,video/*,.pdf,.txt,.md,.csv,.json,.log,.py,.js,.html,.css,.xml,.yml,.yaml">
-      <button type="button" id="attach-btn" class="bg-black/10 hover:bg-black/20 p-3 rounded-xl transition flex items-center justify-center cursor-pointer" title="Joindre un fichier">
+      <button type="button" id="attach-btn" class="hidden bg-black/10 hover:bg-black/20 p-3 rounded-xl transition flex items-center justify-center cursor-pointer" title="Joindre un fichier">
         <i class="fa-solid fa-paperclip"></i>
+      </button>
+      <div class="add-menu hidden" id="add-menu">
+        <button type="button" data-add="camera"><span>📷</span> Prendre une photo</button>
+        <button type="button" data-add="media"><span>🖼️</span> Photo ou vidéo</button>
+        <button type="button" data-add="file"><span>📎</span> Autre fichier (PDF, texte…)</button>
+        <button type="button" data-add="mic"><span>🎤</span> Parler à Capzo</button>
+      </div>
+      <button type="button" id="add-btn" class="bg-black/10 hover:bg-black/20 p-3 rounded-xl transition flex items-center justify-center cursor-pointer" title="Ajouter une photo, une vidéo ou un fichier">
+        <i class="fa-solid fa-plus"></i>
       </button>
       <button type="button" id="mic" class="bg-black/10 hover:bg-black/20 p-3 rounded-xl transition flex items-center justify-center cursor-pointer" title="Parler">
         <i class="fa-solid fa-microphone"></i>
       </button>
-      <button type="button" id="cam-btn" class="bg-black/10 hover:bg-black/20 p-3 rounded-xl transition flex items-center justify-center cursor-pointer" title="Prendre une photo">
+      <button type="button" id="cam-btn" class="hidden bg-black/10 hover:bg-black/20 p-3 rounded-xl transition flex items-center justify-center cursor-pointer" title="Prendre une photo">
         <i class="fa-solid fa-camera"></i>
       </button>
       <input type="file" id="camera-input" class="hidden" accept="image/*" capture="environment">
-      <input type="text" id="user-input" placeholder="Rédige une histoire, demande une image, ou joins un fichier…"
+      <input type="file" id="media-input" class="hidden" accept="image/*,video/*" multiple>
+      <input type="text" id="user-input" placeholder="Pose ta question…"
              class="app-input flex-1 border rounded-xl px-4 py-3 text-sm focus:outline-none transition"
              autocomplete="off" maxlength="2000" enterkeyhint="send" autocapitalize="sentences">
       <button type="submit" id="send" class="app-btn-primary bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-xl transition flex items-center justify-center shadow-md">
@@ -387,16 +410,16 @@ const MODES = [
   { id: "loisir",    icon: "🎮", nom: "Loisir",    desc: "Blagues, jeux et idées de sortie." },
 ];
 const PLACEHOLDERS = {
-  general: "Pose une question, demande une image, une vidéo, ou joins un fichier…",
-  education: "Exercice à résoudre, quiz à générer, notion à expliquer…",
-  code: "Décris le programme ou colle ton erreur…",
-  build: "Décris ce que tu veux construire…",
-  religion: "Pose ta question avec calme et respect…",
-  mythologie: "Un dieu, un héros, un mythe à raconter…",
-  histoire: "Donne-moi un thème, un personnage, une ambiance…",
-  jarvis: "Que puis-je organiser ou automatiser pour toi ?",
-  hermes: "Dis-moi ce que tu veux apprendre ou mémoriser…",
-  loisir: "Une devinette, une blague, un quiz culturel…"
+  general: "Pose ta question…",
+  education: "Ton exercice, ton quiz…",
+  code: "Ton programme ou ton erreur…",
+  build: "Ce que tu veux construire…",
+  religion: "Ta question…",
+  mythologie: "Le mythe à raconter…",
+  histoire: "Le thème de l'histoire…",
+  jarvis: "Ce que tu veux organiser…",
+  hermes: "Ce que tu veux apprendre…",
+  loisir: "Ta devinette, ta blague…"
 };
 const RACCOURCIS = {
   exercice:  ["education", "Résous cet exercice complètement, étape par étape, avec le corrigé détaillé : "],
@@ -751,6 +774,35 @@ if(camBtn && cameraInput){
   cameraInput.addEventListener('change', e => { ajouterFichiers(e.target.files); cameraInput.value = ''; });
 }
 
+/* Bouton « + » : photo, vidéo, fichier, micro */
+const addBtn = document.getElementById('add-btn');
+const addMenu = document.getElementById('add-menu');
+const mediaInput = document.getElementById('media-input');
+if(addBtn && addMenu){
+  addBtn.addEventListener('click', e => {
+    e.preventDefault(); e.stopPropagation();
+    addMenu.classList.toggle('hidden');
+  });
+  document.addEventListener('click', e => {
+    if(!addMenu.contains(e.target) && e.target !== addBtn && !addBtn.contains(e.target))
+      addMenu.classList.add('hidden');
+  });
+  addMenu.querySelectorAll('[data-add]').forEach(b => {
+    b.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      const choix = b.dataset.add;
+      if(choix === 'camera' && cameraInput) cameraInput.click();
+      else if(choix === 'media' && mediaInput) mediaInput.click();
+      else if(choix === 'file' && fileInput) fileInput.click();
+      else if(choix === 'mic' && micBtn) micBtn.click();
+      addMenu.classList.add('hidden');
+    });
+  });
+}
+if(mediaInput) mediaInput.addEventListener('change', e => {
+  ajouterFichiers(e.target.files); mediaInput.value = '';
+});
+
 document.body.addEventListener('dragover', e => { e.preventDefault(); chatContainer.classList.add('chat-drag'); });
 document.body.addEventListener('dragleave', e => { if(e.relatedTarget === null) chatContainer.classList.remove('chat-drag'); });
 document.body.addEventListener('drop', e => {
@@ -1081,7 +1133,7 @@ function declencherReveil(){
 }
 
 function majFinCapture(){
-  userInput.placeholder = "Rédige une histoire, demande une image, ou joins un fichier…";
+  userInput.placeholder = PLACEHOLDERS[selProfil ? selProfil.value : 'general'] || "Pose ta question…";
   micBtn.style.background = ""; micBtn.style.color = "";
 }
 
