@@ -1,16 +1,19 @@
 # -*- coding: utf-8 -*-
-"""Mémoire persistante de Capzo, isolée par visiteur.
+"""Mémoire persistante par visiteur : faits et historique.
 
-Conserve des faits (préférences, informations importantes) et l'historique
-récent des échanges, afin que Capzo se souvienne d'une session à l'autre
-et d'un appareil à l'autre.
+Capzo se souvient des préférences (faits) et des discussions précédentes pour
+personnaliser ses réponses. Tout reste isolé par visiteur (cookie capzo_vid).
 """
 import hashlib
 import json
 import os
+import re
 import time
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MAX_FAITS = 40
+MAX_HISTORIQUE = 80
+MAX_CHARS = 8000
 
 
 def _cle_visiteur():
@@ -31,78 +34,59 @@ def _chemin():
 def _lire():
     try:
         with open(_chemin(), "r", encoding="utf-8") as f:
-            data = json.load(f)
-        if not isinstance(data, dict):
-            data = {}
+            d = json.load(f)
+        if isinstance(d, dict):
+            d.setdefault("faits", [])
+            d.setdefault("historique", [])
+            return d
     except Exception:
-        data = {}
-    data.setdefault("faits", [])
-    data.setdefault("historique", [])
-    return data
+        pass
+    return {"faits": [], "historique": []}
 
 
-def _ecrire(data):
+def _ecrire(d):
     try:
+        texte = json.dumps(d, ensure_ascii=False)
+        while len(texte) > MAX_CHARS and d.get("historique"):
+            d["historique"].pop(0)
+            texte = json.dumps(d, ensure_ascii=False)
         with open(_chemin(), "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+            json.dump(d, f, ensure_ascii=False, indent=2)
     except Exception:
         pass
 
 
 def faits():
-    return list(_lire().get("faits") or [])
+    return list(_lire().get("faits", []))
+
+
+def historique():
+    return list(_lire().get("historique", []))
 
 
 def ajouter_fait(texte):
     texte = (texte or "").strip()
-    if not texte:
+    if not texte or len(texte) < 3:
         return False
-    data = _lire()
-    if texte not in data["faits"]:
-        data["faits"].append(texte[:300])
-        data["faits"] = data["faits"][-60:]
-        _ecrire(data)
+    d = _lire()
+    if texte not in d["faits"]:
+        d["faits"].append(texte)
+        d["faits"] = d["faits"][-MAX_FAITS:]
+        _ecrire(d)
     return True
 
 
 def supprimer_fait(index):
-    data = _lire()
     try:
-        index = int(index)
+        i = int(index)
     except (TypeError, ValueError):
         return False
-    if 0 <= index < len(data["faits"]):
-        del data["faits"][index]
-        _ecrire(data)
+    d = _lire()
+    if 0 <= i < len(d.get("faits", [])):
+        d["faits"].pop(i)
+        _ecrire(d)
         return True
     return False
-
-
-def effacer_faits():
-    data = _lire()
-    data["faits"] = []
-    _ecrire(data)
-
-
-def historique():
-    return list(_lire().get("historique") or [])
-
-
-def ajouter_message(role, contenu):
-    if role not in ("user", "assistant") or not contenu:
-        return False
-    data = _lire()
-    data["historique"].append({"role": role, "content": str(contenu)[:1500],
-                               "t": int(time.time())})
-    data["historique"] = data["historique"][-80:]
-    _ecrire(data)
-    return True
-
-
-def effacer_historique():
-    data = _lire()
-    data["historique"] = []
-    _ecrire(data)
 
 
 def effacer_tout():
@@ -110,20 +94,79 @@ def effacer_tout():
         os.remove(_chemin())
     except FileNotFoundError:
         pass
+    except Exception:
+        pass
+    return True
+
+
+def detecter_et_stocker(message):
+    t = (message or "").strip()
+    if not t:
+        return []
+    trouves = []
+    motifs = [
+        r"(?:souviens[- ]toi que|rappele[- ]toi que|rappelle[- ]toi que)\s*(.+)",
+        r"(?:je pr[ée]f[èe]re|j'aime|m[ae] (?:nom|pr[ée]nom) (?:est|c'est))\s*(.+)",
+        r"(?:je n'aime pas|j'ai horreur de)\s*(.+)",
+        r"(?:mon (?:m[ée]tier|travail|projet|objectif) (?:est|c'est))\s*(.+)",
+    ]
+    for motif in motifs:
+        for m in re.finditer(motif, t, re.IGNORECASE):
+            clause = m.group(1).strip().rstrip(".!?")
+            if 3 <= len(clause) <= 240:
+                ajouter_fait(clause)
+                trouves.append(clause)
+    return trouves
+
+
+def ajouter_message(role, contenu):
+    contenu = contenu if isinstance(contenu, str) else str(contenu or "")
+    contenu = contenu.strip()
+    if not contenu:
+        return False
+    if role == "user":
+        detecter_et_stocker(contenu)
+    extrait = contenu[:200].replace("\n", " ")
+    return ajouter_historique(("U: " if role == "user" else "A: ") + extrait)
+
+
+def ajouter_historique(texte):
+    texte = (texte or "").strip()
+    if not texte or len(texte) < 6:
+        return False
+    d = _lire()
+    if texte not in d["historique"]:
+        d["historique"].append(texte)
+        d["historique"] = d["historique"][-MAX_HISTORIQUE:]
+        _ecrire(d)
+    return True
 
 
 def contexte():
-    """Texte à injecter dans le prompt système."""
-    data = _lire()
+    d = _lire()
     morceaux = []
-    if data.get("faits"):
-        morceaux.append("Faits mémorisés sur l'utilisateur :\n- " +
-                        "\n- ".join(data["faits"]))
-    hist = (data.get("historique") or [])[-12:]
-    if hist:
-        lignes = []
-        for m in hist:
-            prefixe = "Utilisateur" if m.get("role") == "user" else "Capzo"
-            lignes.append(prefixe + " : " + str(m.get("content", ""))[:400])
-        morceaux.append("Échanges récents à ne pas oublier :\n" + "\n".join(lignes))
-    return "\n\n".join(morceaux)
+    if d.get("faits"):
+        morceaux.append("Faits/préférences de l'utilisateur (à respecter) : " +
+                        " ; ".join(d["faits"][-20:]))
+    if d.get("historique"):
+        morceaux.append("Souvenirs récents : " + " | ".join(d["historique"][-10:]))
+    if not morceaux:
+        return ""
+    return ("\n\n=== MÉMOIRE (personnalisation) ===\n" + "\n".join(morceaux) +
+            "\nUtilise cette mémoire pour personnaliser tes réponses, sans la répéter mot pour mot.")
+
+
+def effacer_tout():
+    try:
+        os.remove(_chemin())
+    except FileNotFoundError:
+        pass
+    except Exception:
+        pass
+    return True
+
+
+def etat():
+    d = _lire()
+    return {"faits": d.get("faits", []), "historique": d.get("historique", []),
+            "nombre": len(d.get("faits", [])) + len(d.get("historique", []))}

@@ -70,7 +70,14 @@ comme adaptateur générique : fournis l'URL de son API et ta clé, et le connec
 devient opérationnel sans modifier le code ni l'hébergement. Si ton Windsor IA
 utilise un format d'échange particulier, transmets sa documentation pour l'adapter.
 
-## 7. Inscription, Apple et accès avancé
+## 7. Mémoire, voix et agents
+
+- **Mémoire persistante** par visiteur : faits/préférences et souvenirs, injectés dans les prompts. Panneau « 🧠 Mémoire » pour consulter/effacer.
+- **Voix masculine hyper-réaliste** par défaut : Henri Neural (Microsoft Edge TTS), sélectionnable.
+- **Mode mythologie** (mythes de tous les peuples) + modes **Jarvis** et **Hermes** (liens GitHub OpenJarvis et Hermes Agent).
+- **Disponibilité mobile** améliorée (bouton d'installation toujours visible).
+
+## 8. Inscription, Apple et accès avancé
 
 - Bouton **« S'inscrire gratuitement »** sur le portail : l'inscription se fait en un clic
   avec Google, GitHub ou Apple (aucun mot de passe).

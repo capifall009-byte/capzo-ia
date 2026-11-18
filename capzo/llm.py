@@ -32,10 +32,12 @@ NIVEAUX = {
 
 # Profils d'usage : on ne change pas de modele (evite 20 s de rechargement),
 # on change le system prompt et le budget de tokens.
-PROFILS = ("general", "education", "code", "loisir", "build", "religion", "histoire", "mythologie")
+PROFILS = ("general", "education", "code", "loisir", "build", "religion", "histoire",
+           "mythologie", "jarvis", "hermes")
 FACTEURS = {
     "general": 1.0, "education": 2.2, "code": 2.4, "loisir": 1.2,
     "build": 2.6, "religion": 1.8, "histoire": 3.0, "mythologie": 3.2,
+    "jarvis": 2.0, "hermes": 2.4,
 }
 
 SYSTEM_BASE = (
@@ -139,6 +141,25 @@ SYSTEM_HISTOIRE = SYSTEM_BASE + (
     "- Termine par une courte question proposant une suite ou un autre genre."
 )
 
+SYSTEM_JARVIS = SYSTEM_BASE + (
+
+    "\n\n=== MODE JARVIS === Tu es un assistant personnel de type Jarvis, inspire d'OpenJarvis "
+    "(open-jarvis/OpenJarvis). Tu aides sur l'ordinateur et le telephone : organisation, "
+    "rappels, recherche, automatisation, explications techniques.\n"
+    "- Reponses directes, structurees, avec etapes actionnables.\n"
+    "- Si une action systeme est necessaire, decris-la precisement et propose le code/commande.\n"
+    "- Reste local-first et respectueux de la vie privee : ne demande jamais de secret inutile."
+)
+
+SYSTEM_HERMES = SYSTEM_BASE + (
+
+    "\n\n=== MODE HERMES === Tu es un agent Hermes (NousResearch/hermes-agent) : tu grandis avec "
+    "l'utilisateur, tu memorises ses preferences et tu t'adaptes.\n"
+    "- Utilise la memoire fournie pour personnaliser tes reponses.\n"
+    "- Propose des plans, des outils et des automatisations, avec verification.\n"
+    "- Sois methodique : hypothese, action, verification, resultat."
+)
+
 SYSTEMS = {
     "general": SYSTEM_BASE,
     "education": SYSTEM_EDUCATION,
@@ -148,12 +169,17 @@ SYSTEMS = {
     "religion": SYSTEM_RELIGION,
     "mythologie": SYSTEM_MYTHOLOGIE,
     "histoire": SYSTEM_HISTOIRE,
+    "jarvis": SYSTEM_JARVIS,
+    "hermes": SYSTEM_HERMES,
 }
 
 
-def systeme_pour(profil="general"):
-    """Renvoie le prompt systeme du profil choisi."""
-    return SYSTEMS.get(profil, SYSTEM_BASE)
+def systeme_pour(profil="general", memoire=None):
+    """Renvoie le prompt systeme du profil choisi, avec memoire optionnelle."""
+    base = SYSTEMS.get(profil, SYSTEM_BASE)
+    if memoire:
+        base = base + "\n" + memoire if memoire not in base else base
+    return base
 
 
 def profil_auto(profil, message):
@@ -189,6 +215,10 @@ def profil_auto(profil, message):
     if re.search(r"\b(build|construis|construire|fabrique|application|site web|"
                  r"un projet|prototype|automatis\w*|pipeline|déploie)\b", t):
         return "build"
+    if re.search(r"\b(jarvis|assistant personnel|organise|agenda personnel|rappel)\b", t):
+        return "jarvis"
+    if re.search(r"\b(hermes|agent qui apprend|mémoire personnelle|adapte-toi)\b", t):
+        return "hermes"
     if re.search(
         r"\b(blague|devinette|jeu|amus\w*|loisir|d\w*fi|"
         r"paradoxe|quiz culturel|parodie|improvis\w*)\b", t
@@ -553,10 +583,12 @@ def _fallback_texte(messages, system):
                            "Verifie la connexion, puis reessaie."))]
 
 
-def chat(messages, system=SYSTEM_BASE, model="openai", timeout=180, force_json=False, mode="auto", modele=None, profil="general"):
+def chat(messages, system=SYSTEM_BASE, model="openai", timeout=180, force_json=False, mode="auto", modele=None, profil="general", memoire=None):
     """mode: 'auto' (cloud si configure, sinon local, sinon secours), 'local', 'online'."""
     if system == SYSTEM_BASE and profil != "general":
-        system = systeme_pour(profil)
+        system = systeme_pour(profil, memoire)
+    elif memoire and system and memoire not in (system or ""):
+        system = (system or "") + "\n" + memoire
     if mode == "online":
         return _pollinations_chat(messages, system, model, timeout)
     # En "Auto", le cloud est prioritaire : beaucoup plus rapide que le CPU.
@@ -578,9 +610,11 @@ def chat(messages, system=SYSTEM_BASE, model="openai", timeout=180, force_json=F
     return _pollinations_chat(messages, system, model, timeout)
 
 
-def chat_stream(messages, system=None, mode="auto", modele=None, reflexion="equilibre", profil="general"):
+def chat_stream(messages, system=None, mode="auto", modele=None, reflexion="equilibre", profil="general", memoire=None):
     """Genere des evenements ('delta', texte) puis ('stats', {...}). Ne leve jamais."""
-    system = system or systeme_pour(profil)
+    system = system or systeme_pour(profil, memoire)
+    if memoire and system and memoire not in system:
+        system = system + "\n" + memoire
     budget = budget_tokens(reflexion, profil)
     if mode != "online":
         if mode == "auto" and CLOUD_PRET:

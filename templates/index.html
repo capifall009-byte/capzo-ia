@@ -185,6 +185,9 @@
     <div id="liste-conversations" class="space-y-1 overflow-y-auto" style="max-height:30vh"></div>
     <p class="mt-5 mb-2 text-[10px] uppercase tracking-wider opacity-50">Modes rapides</p>
     <div id="liste-modes" class="space-y-1"></div>
+    <button id="btn-memoire" class="w-full rounded-xl px-3 py-2 text-xs font-semibold mb-3" style="background:rgba(127,127,127,.12);color:inherit">
+      <i class="fa-solid fa-brain"></i> Mémoire
+    </button>
     <button id="btn-connecter" class="w-full rounded-xl px-3 py-2 text-xs font-semibold mb-3" style="background:rgba(99,102,241,.18);color:#a5b4fc">
       <i class="fa-solid fa-right-to-bracket"></i> Se connecter (mails, agenda)
     </button>
@@ -224,6 +227,8 @@
         <option value="religion">🕊 Religion</option>
         <option value="mythologie">🏛 Mythologie</option>
         <option value="histoire">📖 Histoire</option>
+        <option value="jarvis">🤖 Jarvis</option>
+        <option value="hermes">🧬 Hermes</option>
         <option value="loisir">🎮 Loisir</option>
       </select>
       <select id="reflexion" class="top-select hidden sm:block" title="Temps de réflexion">
@@ -237,7 +242,7 @@
         <option value="theme-light">☀️ Mode Clair</option>
         <option value="theme-emerald">🌿 Émeraude</option>
       </select>
-      <button id="btn-installer" class="top-btn hidden sm:block" title="Installer sur Android / iPhone"><i class="fa-solid fa-download"></i></button>
+      <button id="btn-installer" class="top-btn" title="Installer sur Android / iPhone"><i class="fa-solid fa-download"></i></button>
       <button id="btn-acces" class="top-btn hidden sm:block" title="Accès avancé au téléphone/PC"><i class="fa-solid fa-shield-halved"></i></button>
       <button id="btn-memoire" class="top-btn hidden sm:block" title="Mémoire de Capzo"><i class="fa-solid fa-brain"></i></button>
       <button id="btn-connecteurs" class="top-btn" title="Connecteurs (Google, GitHub, Instagram, TikTok, Windsor IA)"><i class="fa-solid fa-plug"></i></button>
@@ -362,6 +367,8 @@ const MODES = [
   { id: "religion",  icon: "🕊", nom: "Religion",  desc: "Neutre, respectueux, documenté." },
   { id: "mythologie", icon: "🏛", nom: "Mythologie", desc: "Mythes et légendes de tous les peuples." },
   { id: "histoire",  icon: "📖", nom: "Histoire",  desc: "Une histoire à partir de ton prompt." },
+  { id: "jarvis",    icon: "🤖", nom: "Jarvis",    desc: "Assistant personnel (OpenJarvis)." },
+  { id: "hermes",    icon: "🧬", nom: "Hermes",    desc: "Agent qui apprend (Hermes Agent)." },
   { id: "loisir",    icon: "🎮", nom: "Loisir",    desc: "Blagues, jeux et idées de sortie." },
 ];
 const PLACEHOLDERS = {
@@ -372,6 +379,8 @@ const PLACEHOLDERS = {
   religion: "Pose ta question avec calme et respect…",
   mythologie: "Un dieu, un héros, un mythe à raconter…",
   histoire: "Donne-moi un thème, un personnage, une ambiance…",
+  jarvis: "Que puis-je organiser ou automatiser pour toi ?",
+  hermes: "Dis-moi ce que tu veux apprendre ou mémoriser…",
   loisir: "Une devinette, une blague, un quiz culturel…"
 };
 const RACCOURCIS = {
@@ -1163,6 +1172,14 @@ async function panneauConnecteurs(){
           '<br><button class="lien-outil" id="btn-test-windsor" type="button">Tester la connexion</button> <span id="test-windsor" style="opacity:.7"></span>'
         : 'Non configuré. Ajoute <code>CAPZO_WINDSOR_URL</code> et <code>CAPZO_WINDSOR_KEY</code> dans Render. La clé n\'est jamais affichée ici.') +
       '<br><span style="opacity:.7">Sert de hub générique pour brancher d\'autres services sans changer l\'hébergement.</span></div>' +
+    '<div class="connecteur"><b>🤖 OpenJarvis (GitHub)</b><br>' +
+      '<span style="opacity:.7">Assistant personnel open source (open-jarvis/OpenJarvis).</span><br>' +
+      '<a class="lien-outil" href="https://github.com/open-jarvis/OpenJarvis" target="_blank">Voir le projet</a>' +
+      '<br><span style="opacity:.6;font-size:11px">Pour l\'utiliser comme moteur : CAPZO_OPENJARVIS_URL + CAPZO_OPENJARVIS_KEY.</span></div>' +
+    '<div class="connecteur"><b>🧬 Hermes Agent (GitHub)</b><br>' +
+      '<span style="opacity:.7">Agent qui apprend avec toi (NousResearch/hermes-agent).</span><br>' +
+      '<a class="lien-outil" href="https://github.com/NousResearch/hermes-agent" target="_blank">Voir le projet</a>' +
+      '<br><span style="opacity:.6;font-size:11px">Pour l\'utiliser comme moteur : CAPZO_HERMES_URL + CAPZO_HERMES_KEY.</span></div>' +
     '<div class="connecteur"><b>' + dot(d.cloud) + 'Moteur rapide</b><br>' +
       (d.cloud
         ? 'Clé API active : ' + echapper(d.modele_cloud || '')
@@ -1651,6 +1668,33 @@ const bannerFermer = document.getElementById('banner-fermer');
 if(bannerFermer) bannerFermer.onclick = () => {
   const b = document.getElementById('auth-banner'); if(b) b.style.display = 'none';
 };
+
+async function panneauMemoire(){
+  let d = {};
+  try{ d = await (await fetch('/api/memoire')).json(); }catch(e){}
+  const faits = (d.faits || []).map((f,i) =>
+    '<div class="connecteur"><b>' + (i+1) + '.</b> ' + echapper(f) +
+    ' <button data-del="' + i + '" class="lien-outil" style="padding:2px 8px;font-size:10px">✕</button></div>').join('');
+  ouvrirPanneau('<h3>🧠 Mémoire</h3><p style="opacity:.7">Capzo se souvient de tes préférences et discussions.</p>' +
+    (faits || '<p style="opacity:.6">Aucun fait enregistré pour le moment.</p>') +
+    '<br><button id="btn-effacer-memoire" class="lien-outil" type="button">Tout effacer</button>');
+  setTimeout(() => {
+    document.querySelectorAll('[data-del]').forEach(b => {
+      b.onclick = async () => {
+        await fetch('/api/memoire', { method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ index: parseInt(b.dataset.del) }) });
+        panneauMemoire();
+      };
+    });
+    const e = document.getElementById('btn-effacer-memoire');
+    if(e) e.onclick = async () => {
+      await fetch('/api/memoire', { method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tout: true }) });
+      panneauMemoire();
+    };
+  }, 80);
+}
+document.getElementById('btn-memoire').onclick = panneauMemoire;
 
 /* ============================ démarrage ============================ */
 try{
