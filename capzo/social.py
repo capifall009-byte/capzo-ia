@@ -245,6 +245,17 @@ def deconnecter(service):
     return True
 
 
+def connecter_token(service, token, compte=None):
+    """Enregistre un jeton d'acces deja obtenu (collage manuel), sans OAuth."""
+    service = (service or "").lower()
+    token = (token or "").strip()
+    if service not in FOURNISSEURS or not token:
+        return False
+    _ecrire(service, {"access_token": token, "compte": compte or "compte connecté",
+                      "connecte_le": int(time.time())})
+    return True
+
+
 def tester_windsor():
     """Vérifie la passerelle sans jamais renvoyer la clé d'API."""
     if not (WINDSOR_URL and WINDSOR_KEY):

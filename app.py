@@ -48,7 +48,7 @@ def _charger_env(chemin=None):
 _charger_env()
 
 from capzo import (agent, anim, apple_auth, auth, connecteurs, fichiers, github_auth,  # noqa: E402
-                   google_auth, images, instagram, llm, quiz, social, video, voix)
+                   google_auth, images, instagram, llm, memoire, quiz, social, video, voix)
 
 UPLOADS = os.path.join(BASE, "uploads")
 os.makedirs(UPLOADS, exist_ok=True)
@@ -378,6 +378,48 @@ def api_auth_deconnexion():
     return jsonify({"ok": True})
 
 
+# ------------------------------------------------------------------ mémoire
+@app.route("/api/memoire", methods=["GET"])
+def api_memoire_lire():
+    return jsonify({"faits": memoire.faits(), "historique": memoire.historique(),
+                    "contexte": memoire.contexte()})
+
+
+@app.route("/api/memoire", methods=["POST"])
+def api_memoire_ajouter():
+    body = request.get_json(force=True, silent=True) or {}
+    texte = (body.get("texte") or "").strip()
+    if not texte:
+        return jsonify({"error": "Texte vide."}), 400
+    memoire.ajouter_fait(texte)
+    return jsonify({"ok": True, "faits": memoire.faits()})
+
+
+@app.route("/api/memoire", methods=["DELETE"])
+def api_memoire_effacer():
+    body = request.get_json(force=True, silent=True) or {}
+    if "index" in body:
+        memoire.supprimer_fait(body.get("index"))
+    elif body.get("tout") or not body:
+        memoire.effacer_tout()
+    return jsonify({"ok": True, "faits": memoire.faits(), "historique": memoire.historique()})
+
+
+@app.route("/api/memoire/message", methods=["POST"])
+def api_memoire_message():
+    body = request.get_json(force=True, silent=True) or {}
+    role = body.get("role")
+    contenu = body.get("contenu") or body.get("content")
+    if role in ("user", "assistant") and contenu:
+        memoire.ajouter_message(role, contenu)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/historique", methods=["GET"])
+def api_historique():
+    return jsonify({"historique": memoire.historique()})
+
+
 # ------------------------------------------------------------------ GitHub
 @app.route("/api/github/etat")
 def api_github_etat():
@@ -479,6 +521,15 @@ def api_social_callback(service):
 @app.route("/api/social/<service>/deconnexion", methods=["POST"])
 def api_social_deconnexion(service):
     social.deconnecter(service)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/social/<service>/token", methods=["POST"])
+def api_social_token(service):
+    body = request.get_json(force=True, silent=True) or {}
+    token = str(body.get("token") or "").strip()
+    if not social.connecter_token(service, token, body.get("compte")):
+        return jsonify({"error": "Jeton invalide ou service inconnu."}), 400
     return jsonify({"ok": True})
 
 
@@ -609,7 +660,7 @@ def _preparer(body):
         if isinstance(m, dict) and m.get("role") in ("user", "assistant") and m.get("content")
     ]
     if not messages or messages[-1]["role"] != "user":
-        return None, None, None, None
+        return None, None, None, None, None
     mode = (body.get("mode") or "auto").lower()
     if mode not in ("auto", "local", "online"):
         mode = "auto"
@@ -619,7 +670,8 @@ def _preparer(body):
     bloc = _bloc_fichiers(body.get("fichiers"))
     if bloc:
         messages[-1]["content"] = messages[-1]["content"] + bloc
-    return messages, mode, modele, _preparer_profil(body)
+    memoire = str(body.get("memoire") or "").strip()[:4000]
+    return messages, mode, modele, _preparer_profil(body), memoire
 
 
 @app.route("/api/chat", methods=["POST"])
@@ -630,12 +682,16 @@ def api_chat():
         return jsonify({"error": "Format de conversation invalide."}), 400
     profil = llm.profil_auto(profil, messages[-1]["content"])
 
+    memoire_ctx = memoire.contexte()
+    memoire.ajouter_message("user", messages[-1]["content"])
     try:
-        type_reponse, contenu = llm.decide(messages, mode=mode, modele=modele, profil=profil)
+        type_reponse, contenu = llm.decide(messages, mode=mode, modele=modele, profil=profil,
+                                           memoire=memoire_ctx)
     except Exception as e:
         return jsonify({"error": f"Impossible de joindre le service IA ({e})."}), 502
 
     if type_reponse == "text":
+        memoire.ajouter_message("assistant", contenu)
         reponse = {"text": contenu}
         m = re.search(r"R[ée]essaie dans (\d+) s", contenu or "")
         if m:
@@ -643,6 +699,7 @@ def api_chat():
         return jsonify(reponse)
 
     if type_reponse == "image":
+        memoire.ajouter_message("assistant", contenu.get("text", "Voici ton image."))
         try:
             image = images.generer_data_url(contenu["prompt"], seed=abs(hash(contenu["prompt"])) % 100000)
             return jsonify({"text": contenu.get("text", "Voici ton image."), "image": image})
@@ -651,6 +708,7 @@ def api_chat():
                             "error": "image"}), 200
 
     # animation
+    memoire.ajouter_message("assistant", contenu.get("text", "Voici ta petite animation."))
     try:
         resultat = anim.fabriquer(contenu.get("prompt", ""), contenu.get("narration", ""))
         return jsonify({"text": contenu.get("text", "Voici ta petite animation."),
@@ -694,6 +752,9 @@ def api_chat_stream():
     if messages is not None:
         profil = llm.profil_auto(profil, messages[-1]["content"])
     system = llm.systeme_pour(profil)
+    _memoire_ctx = memoire.contexte()
+    if _memoire_ctx:
+        system = system + "\n\n" + _memoire_ctx
 
     def evt(charge):
         return "data: " + json.dumps(charge, ensure_ascii=False) + "\n\n"
@@ -704,6 +765,8 @@ def api_chat_stream():
             yield evt({"type": "error", "text": "Format de conversation invalide."})
             return
 
+        if messages is not None:
+            memoire.ajouter_message("user", messages[-1]["content"])
         demande = messages[-1]["content"]
 
         # Sans cle cloud, le petit modele local produit des quiz approximatifs :
@@ -714,6 +777,7 @@ def api_chat_stream():
                 yield evt({"type": "attente", "text": "Je prépare le quiz…"})
                 for morceau in quiz_txt.splitlines(keepends=True):
                     yield evt({"type": "delta", "text": morceau})
+                memoire.ajouter_message("assistant", quiz_txt)
                 yield evt({"type": "fin"})
                 return
 
@@ -726,9 +790,12 @@ def api_chat_stream():
                 yield evt({"type": "error", "text": f"Impossible de joindre le service IA ({e})."})
                 return
             if type_reponse == "text":
+                memoire.ajouter_message("assistant", contenu if isinstance(contenu, str) else str(contenu))
                 yield evt({"type": "message", "payload": {"text": contenu}})
             else:
-                yield evt({"type": "message", "payload": _media_deja_pret(type_reponse, contenu)})
+                pret = _media_deja_pret(type_reponse, contenu)
+                memoire.ajouter_message("assistant", pret.get("text", "") if isinstance(pret, dict) else "")
+                yield evt({"type": "message", "payload": pret})
             return
 
         if agent.detecter_intention(demande):
@@ -745,6 +812,7 @@ def api_chat_stream():
                         yield evt({"type": genre, **(valeur or {})})
             except Exception as e:
                 yield evt({"type": "error", "text": f"Connecteur indisponible ({e})."})
+            memoire.ajouter_message("assistant", complet)
             yield evt({"type": "fin"})
             return
 
@@ -758,6 +826,7 @@ def api_chat_stream():
                     yield evt({"type": "stats", "stats": valeur})
         except Exception as e:
             yield evt({"type": "error", "text": f"Moteur IA indisponible ({e})."})
+        memoire.ajouter_message("assistant", complet)
         yield evt({"type": "fin"})
 
     return Response(flux(), mimetype="text/event-stream",

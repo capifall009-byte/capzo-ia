@@ -222,7 +222,7 @@
         <option value="code">💻 Code</option>
         <option value="build">🛠 Build</option>
         <option value="religion">🕊 Religion</option>
-        <option value="adulte">🎩 Adulte</option>
+        <option value="mythologie">🏛 Mythologie</option>
         <option value="histoire">📖 Histoire</option>
         <option value="loisir">🎮 Loisir</option>
       </select>
@@ -239,6 +239,7 @@
       </select>
       <button id="btn-installer" class="top-btn hidden sm:block" title="Installer sur Android / iPhone"><i class="fa-solid fa-download"></i></button>
       <button id="btn-acces" class="top-btn hidden sm:block" title="Accès avancé au téléphone/PC"><i class="fa-solid fa-shield-halved"></i></button>
+      <button id="btn-memoire" class="top-btn hidden sm:block" title="Mémoire de Capzo"><i class="fa-solid fa-brain"></i></button>
       <button id="btn-connecteurs" class="top-btn" title="Connecteurs (Google, GitHub, Instagram, TikTok, Windsor IA)"><i class="fa-solid fa-plug"></i></button>
       <button id="voix-btn" class="top-btn" title="Voix de Capzo"><i class="fa-solid fa-volume-high"></i></button>
       <select id="voix-choix" class="top-select hidden lg:block" title="Choisir la voix"></select>
@@ -359,7 +360,7 @@ const MODES = [
   { id: "code",      icon: "💻", nom: "Code",      desc: "Code complet, prêt à tourner." },
   { id: "build",     icon: "🛠", nom: "Build",     desc: "Construis ton projet de A à Z." },
   { id: "religion",  icon: "🕊", nom: "Religion",  desc: "Neutre, respectueux, documenté." },
-  { id: "adulte",    icon: "🎩", nom: "Adulte",    desc: "Ton posé et mature, entre adultes." },
+  { id: "mythologie", icon: "🏛", nom: "Mythologie", desc: "Mythes et légendes de tous les peuples." },
   { id: "histoire",  icon: "📖", nom: "Histoire",  desc: "Une histoire à partir de ton prompt." },
   { id: "loisir",    icon: "🎮", nom: "Loisir",    desc: "Blagues, jeux et idées de sortie." },
 ];
@@ -369,7 +370,7 @@ const PLACEHOLDERS = {
   code: "Décris le programme ou colle ton erreur…",
   build: "Décris ce que tu veux construire…",
   religion: "Pose ta question avec calme et respect…",
-  adulte: "Parlons carrément de ta situation…",
+  mythologie: "Un dieu, un héros, un mythe à raconter…",
   histoire: "Donne-moi un thème, un personnage, une ambiance…",
   loisir: "Une devinette, une blague, un quiz culturel…"
 };
@@ -409,7 +410,7 @@ document.querySelectorAll('[data-raccourci]').forEach(btn => {
 const btnVoix = document.getElementById('voix-btn');
 const selVoix = document.getElementById('voix-choix');
 let voixActive = localStorage.getItem('capzo_voix') !== '0';
-let voixId = localStorage.getItem('capzo_voix_id') || 'fr-FR-DeniseNeural';
+let voixId = localStorage.getItem('capzo_voix_id') || 'fr-FR-HenriNeural';
 let fileVoix = [], pompeEnCours = false, generationVoix = 0;
 const audioVoix = new Audio();
 
@@ -1142,7 +1143,9 @@ async function panneauConnecteurs(){
           '<br><button class="lien-outil" data-deco="instagram" type="button">Déconnecter</button>'
         : ((soc.instagram && soc.instagram.configure)
             ? 'Prêt à connecter.<br><button class="lien-outil" data-social="instagram" type="button">Connecter Instagram</button>'
-            : 'Non configuré. Ajoute <code>CAPZO_IG_APP_ID</code> et <code>CAPZO_IG_APP_SECRET</code> dans Render (ou <code>CAPZO_IG_TOKEN</code> pour le mode compte existant).')) +
+            : 'Non configuré côté serveur.') +
+      '<br><input id="tok-instagram" placeholder="Ou colle un jeton Instagram ici" style="width:100%;margin-top:6px;padding:6px;border-radius:8px;border:1px solid rgba(127,127,127,.3);background:transparent;color:inherit;font-size:12px">' +
+      '<button class="lien-outil" data-token="instagram" type="button" style="margin-top:6px">Enregistrer le jeton</button>' +
       '</div>' +
     '<div class="connecteur"><b>' + dot(soc.tiktok && soc.tiktok.pret) + 'TikTok (OAuth officiel)</b><br>' +
       ((soc.tiktok && soc.tiktok.pret)
@@ -1150,7 +1153,9 @@ async function panneauConnecteurs(){
           '<br><button class="lien-outil" data-deco="tiktok" type="button">Déconnecter</button>'
         : ((soc.tiktok && soc.tiktok.configure)
             ? 'Prêt à connecter.<br><button class="lien-outil" data-social="tiktok" type="button">Connecter TikTok</button>'
-            : 'Non configuré. Ajoute <code>CAPZO_TIKTOK_CLIENT_KEY</code> et <code>CAPZO_TIKTOK_CLIENT_SECRET</code> dans Render, puis déclare le callback <code>/api/social/tiktok/callback</code>.')) +
+            : 'Non configuré côté serveur.') +
+      '<br><input id="tok-tiktok" placeholder="Ou colle un jeton TikTok ici" style="width:100%;margin-top:6px;padding:6px;border-radius:8px;border:1px solid rgba(127,127,127,.3);background:transparent;color:inherit;font-size:12px">' +
+      '<button class="lien-outil" data-token="tiktok" type="button" style="margin-top:6px">Enregistrer le jeton</button>' +
       '</div>' +
     '<div class="connecteur"><b>' + dot(soc.windsor && soc.windsor.configure) + 'Windsor IA (passerelle générique)</b><br>' +
       ((soc.windsor && soc.windsor.configure)
@@ -1190,6 +1195,20 @@ async function panneauConnecteurs(){
       b.onclick = async () => {
         await fetch('/api/social/' + encodeURIComponent(b.dataset.deco) + '/deconnexion', { method: 'POST' });
         panneauConnecteurs();
+      };
+    });
+    document.querySelectorAll('[data-token]').forEach(b => {
+      b.onclick = async () => {
+        const service = b.dataset.token;
+        const input = document.getElementById('tok-' + service);
+        const token = input ? input.value.trim() : '';
+        if(!token){ alert('Colle un jeton d\'abord.'); return; }
+        const r = await fetch('/api/social/' + encodeURIComponent(service) + '/token', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+        if(r.ok){ if(input) input.value = ''; panneauConnecteurs(); }
+        else { const j = await r.json().catch(()=>({})); alert(j.error || 'Enregistrement impossible.'); }
       };
     });
     const test = document.getElementById('btn-test-windsor');
@@ -1408,7 +1427,7 @@ function chargerConversation(i){
   if(!c) return;
   convIndex = i;
   conversation = (c.messages || []).slice();
-  chatContainer.innerHTML = '';
+  Array.from(chatContainer.children).forEach(ch => { if(ch.id !== 'welcome') ch.remove(); });
   conversation.forEach(m => {
     const corps = bulle(m.role);
     corps.innerHTML = markdown(m.content || '');
@@ -1419,7 +1438,8 @@ function chargerConversation(i){
 function nouvelleDiscussion(){
   if(conversation.length) sauvegarderConversation();
   convIndex = -1; conversation = []; pieces = []; dessinerPieces();
-  couperVoix(); chatContainer.innerHTML = '';
+  couperVoix();
+  Array.from(chatContainer.children).forEach(ch => { if(ch.id !== 'welcome') ch.remove(); });
   welcome.classList.remove('hidden'); saluer(); versLeBas(); dessinerConversations();
 }
 
@@ -1562,6 +1582,68 @@ function panneauAcces(){
   }
 }
 document.getElementById('btn-acces').onclick = panneauAcces;
+
+function panneauMemoire(){
+  ouvrirPanneau('<h3>🧠 Mémoire de Capzo</h3><p style="opacity:.7">Ce que Capzo retient de toi, d\'une session à l\'autre.</p>' +
+    '<div id="memoire-liste"></div>' +
+    '<div style="margin-top:10px;display:flex;gap:6px">' +
+    '<input id="memoire-input" class="app-input" style="flex:1;border:1px solid rgba(127,127,127,.25);border-radius:10px;padding:6px 8px;font-size:12px" placeholder="Un fait à retenir (ex. je préfère Python)">' +
+    '<button class="lien-outil" id="memoire-ajouter" type="button">Mémoriser</button></div>' +
+    '<div style="margin-top:8px"><button class="lien-outil" id="memoire-effacer" type="button" style="background:#ef4444">Tout oublier</button></div>');
+  const zone = document.getElementById('memoire-liste');
+  async function rafraichir(){
+    zone.innerHTML = 'Chargement…';
+    try{
+      const d = await (await fetch('/api/memoire')).json();
+      const faits = d.faits || [];
+      if(!faits.length){ zone.innerHTML = '<p style="opacity:.6">Aucun fait mémorisé pour l\'instant.</p>'; return; }
+      zone.innerHTML = '';
+      faits.forEach((f, i) => {
+        const div = document.createElement('div');
+        div.className = 'connecteur';
+        div.style.display = 'flex'; div.style.justifyContent = 'space-between'; div.style.alignItems = 'center';
+        div.innerHTML = '<span style="flex:1">' + echapper(f) + '</span>' +
+          '<button class="lien-outil" data-idx="' + i + '" type="button" style="padding:4px 8px;font-size:11px">✕</button>';
+        zone.appendChild(div);
+      });
+      zone.querySelectorAll('[data-idx]').forEach(b => b.onclick = async () => {
+        await fetch('/api/memoire', { method:'DELETE', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ index: parseInt(b.dataset.idx, 10) }) });
+        rafraichir();
+      });
+    }catch(e){ zone.innerHTML = '<p style="opacity:.6">Mémoire indisponible.</p>'; }
+  }
+  rafraichir();
+  document.getElementById('memoire-ajouter').onclick = async () => {
+    const inp = document.getElementById('memoire-input');
+    const t = (inp.value || '').trim();
+    if(!t) return;
+    await fetch('/api/memoire', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ texte: t }) });
+    inp.value = ''; rafraichir();
+  };
+  document.getElementById('memoire-effacer').onclick = async () => {
+    if(!confirm('Tout oublier ?')) return;
+    await fetch('/api/memoire', { method:'DELETE', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ tout: true }) });
+    rafraichir();
+  };
+}
+document.getElementById('btn-memoire').onclick = panneauMemoire;
+
+// Restaurer l'historique serveur si la conversation locale est vide
+(async function restaurerMemoire(){
+  try{
+    const d = await (await fetch('/api/memoire')).json();
+    const hist = d.historique || [];
+    if(!hist.length || conversation.length) return;
+    conversation = hist.map(m => ({ role: m.role, content: m.content })).slice(-40);
+    Array.from(chatContainer.children).forEach(ch => { if(ch.id !== 'welcome') ch.remove(); });
+    conversation.forEach(m => { const corps = bulle(m.role); corps.innerHTML = markdown(m.content || ''); });
+    welcome.classList.add('hidden');
+    versLeBas();
+  }catch(e){}
+})();
 
 const bannerCo = document.getElementById('banner-co');
 if(bannerCo) bannerCo.onclick = () => panneauConnecteurs();

@@ -19,13 +19,13 @@ except Exception:  # pragma: no cover
 # Voix francaises proposees (nom technique -> libelle lisible)
 VOIX = [
     {"id": "fr-FR-DeniseNeural", "nom": "Denise · femme, chaleureuse (France)"},
-    {"id": "fr-FR-HenriNeural", "nom": "Henri · homme, pose (France)"},
+    {"id": "fr-FR-HenriNeural", "nom": "Henri · homme, hyper-réaliste (France)"},
     {"id": "fr-FR-EloiseNeural", "nom": "Éloïse · jeune (France)"},
     {"id": "fr-FR-RemyMultilingualNeural", "nom": "Rémy · homme, moderne (multilingue)"},
     {"id": "fr-CA-SylvieNeural", "nom": "Sylvie · femme (Québec)"},
     {"id": "fr-CA-AntoineNeural", "nom": "Antoine · homme (Québec)"},
 ]
-VOIX_DEFAUT = "fr-FR-DeniseNeural"
+VOIX_DEFAUT = "fr-FR-HenriNeural"
 
 _cache = {}
 _cache_ordre = []

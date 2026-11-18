@@ -32,10 +32,10 @@ NIVEAUX = {
 
 # Profils d'usage : on ne change pas de modele (evite 20 s de rechargement),
 # on change le system prompt et le budget de tokens.
-PROFILS = ("general", "education", "code", "loisir", "build", "religion", "adulte", "histoire")
+PROFILS = ("general", "education", "code", "loisir", "build", "religion", "histoire", "mythologie")
 FACTEURS = {
     "general": 1.0, "education": 2.2, "code": 2.4, "loisir": 1.2,
-    "build": 2.6, "religion": 1.8, "adulte": 1.4, "histoire": 3.0,
+    "build": 2.6, "religion": 1.8, "histoire": 3.0, "mythologie": 3.2,
 }
 
 SYSTEM_BASE = (
@@ -115,15 +115,17 @@ SYSTEM_RELIGION = SYSTEM_BASE + (
     "donne le contexte puis les positions."
 )
 
-SYSTEM_ADULTE = SYSTEM_BASE + (
+SYSTEM_MYTHOLOGIE = SYSTEM_BASE + (
 
-    "\n\n=== MODE ADULTE === Ton posé, mature et direct : on parle entre adultes.\n"
-    "- Sujets possibles : carrière, argent, relations, famille, santé mentale, "
-    "décisions difficiles, éthique, sexualité abordée de façon saine et respectueuse.\n"
-    "- Réponses nuancées : avantages, risques, conséquences, puis une recommandation claire.\n"
-    "- Pas de langage enfantin, pas de morale facile, mais zéro contenu explicite, "
-    "illégal ou non consenti. Si une demande dépasse ce cadre, propose une alternative "
-    "respectueuse au lieu de refuser sèchement."
+    "\n\n=== MODE MYTHOLOGIE === Tu es un conteur de mythes et un spécialiste des mythologies.\n"
+    "- Raconte les mythes (grecs, romains, nordiques, égyptiens, mésopotamiens, celtiques, "
+    "africains, amérindiens, asiatiques...) avec souffle épique, personnages divins, "
+    "symboles et métamorphoses.\n"
+    "- Explique le contexte culturel, les variantes et la portée symbolique, sans jamais "
+    "mélanger les traditions. Distingue mythe, légende et fait historique.\n"
+    "- Style : récit vivant, dialogues, images fortes, puis une courte note d'interprétation.\n"
+    "- Si l'utilisateur demande une création, invente un mythe original cohérent avec une "
+    "tradition choisie, avec dieux, héros, épreuve et morale."
 )
 
 SYSTEM_HISTOIRE = SYSTEM_BASE + (
@@ -144,7 +146,7 @@ SYSTEMS = {
     "loisir": SYSTEM_LOISIR,
     "build": SYSTEM_BUILD,
     "religion": SYSTEM_RELIGION,
-    "adulte": SYSTEM_ADULTE,
+    "mythologie": SYSTEM_MYTHOLOGIE,
     "histoire": SYSTEM_HISTOIRE,
 }
 
@@ -171,6 +173,11 @@ def profil_auto(profil, message):
         r"exception|traceback|debug)\b", t
     ):
         return "code"
+    if re.search(
+        r"\b(mythologie|mythe|mythologique|dieux? grecs?|olymp|nordique|égyptien|"
+        r"mésopotamien|celtique|valkyrie|zeus|odin|thor|anubis|persephone)\b", t
+    ):
+        return "mythologie"
     if re.search(
         r"\b(raconte|raconter|histoire|conte|légende|legend|fiction|nouvelle|"
         r" romance|thriller|fantastique)\b", t
@@ -732,9 +739,11 @@ def _repli_video(message):
     })
 
 
-def decide(messages, mode="auto", modele=None, profil="general"):
+def decide(messages, mode="auto", modele=None, profil="general", memoire=None):
     """Renvoie ('text', texte) ou ('image', ...) ou ('animation', ...). Ne leve jamais."""
     system = systeme_pour(profil)
+    if memoire:
+        system = system + "\n\n" + memoire
     dernier_brut = ""
     for m in reversed(messages):
         if m.get("role") == "user":
@@ -767,8 +776,11 @@ def decide(messages, mode="auto", modele=None, profil="general"):
             return ("text", "Je n'arrive pas à joindre le moteur IA pour le moment. "
                             "Vérifie que le service local est démarré, puis réessaie.")
 
+    system_media = SYSTEM_MEDIA
+    if memoire:
+        system_media = system_media + "\n\n" + memoire
     try:
-        brut = chat(messages, system=SYSTEM_MEDIA, force_json=True, mode=mode, modele=modele,
+        brut = chat(messages, system=system_media, force_json=True, mode=mode, modele=modele,
                     profil=profil)
         data = _extract_json(brut)
     except Exception:
