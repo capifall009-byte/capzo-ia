@@ -258,6 +258,11 @@
         <option value="equilibre" selected>⚖️ Équilibré</option>
         <option value="approfondi">🔎 Approfondi</option>
       </select>
+      <select id="expert" class="top-select hidden sm:block" title="Intelligences supplémentaires">
+        <option value="auto" selected>🧠 1 IA</option>
+        <option value="expert">🎯 Expert code</option>
+        <option value="multi">🤝 Multi-IA</option>
+      </select>
       <select id="theme-selector" class="top-select hidden md:block">
         <option value="theme-dark">🌙 Sombre Élégant</option>
         <option value="theme-cyberpunk">⚡ Néon Cyberpunk</option>
@@ -374,6 +379,7 @@ const previewContainer = document.getElementById('file-preview-container');
 const micBtn = document.getElementById('mic');
 const selMoteur = document.getElementById('moteurChoix');
 const selReflexion = document.getElementById('reflexion');
+const selExpert = document.getElementById('expert');
 const selProfil = document.getElementById('profil');
 const themeSelector = document.getElementById('theme-selector');
 const catalogue = document.getElementById('catalogue');
@@ -927,6 +933,7 @@ async function envoyer(){
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ messages: conversation, mode: choix.mode, modele: choix.modele,
                              reflexion: selReflexion.value, profil: selProfil.value,
+                             expert: selExpert ? selExpert.value : 'auto',
                              fichiers: joints.map(p => p.id) })
     });
     if(!r.ok) throw new Error("Erreur serveur " + r.status);
@@ -1244,6 +1251,11 @@ async function panneauConnecteurs(){
   const dot = ok => '<span class="pastille" style="background:' + (ok ? '#10b981' : '#f59e0b') + '"></span>';
   const parts = [];
   parts.push('<h3>Connecteurs</h3>');
+  parts.push('<div class="connecteur"><b>' + dot(d.vision) + 'Vision (photos & vidéos)</b><br>' +
+    (d.vision ? 'Active : Capzo lit tes images et répond à tes questions dessus.' :
+      'Indisponible pour le moment.') + '</div>');
+  parts.push('<div class="connecteur"><b>' + dot((d.experts || []).length > 1) + 'Intelligences</b><br>' +
+    'Mode principal + Expert code + Multi-IA (menu en haut de l\'écran).</div>');
   // Google
   parts.push('<div class="connecteur"><b>' + dot(g.pret) + 'Compte Google (1 clic)</b><br>');
   if (g.pret) {

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Moteur de Capzo : Ollama local en priorite (aucune limite), Pollinations en secours."""
+import concurrent.futures
 import json
 import os
 import re
@@ -17,6 +18,12 @@ API_KEY = os.environ.get("CAPZO_API_KEY") or ""
 API_MODEL = os.environ.get("CAPZO_API_MODEL") or ""
 MOTEUR_FORCE = (os.environ.get("CAPZO_MOTEUR") or "auto").lower()
 CLOUD_PRET = bool(API_URL and API_KEY and API_MODEL)
+# Le modele principal (qwen/qwen3.8-27b sur Groq) est multimodal : il voit les images.
+# On garde une variable pour forcer un autre modele vision si besoin.
+VISION_MODEL = (os.environ.get("CAPZO_VISION_MODEL") or API_MODEL or "").strip()
+# EXPERTS : modeles supplementaires utilises par le mode Multi-IA / Expert.
+EXPERT_MODEL = (os.environ.get("CAPZO_EXPERT_MODEL") or "openai/gpt-oss-120b").strip()
+EXPERT_SECOND = (os.environ.get("CAPZO_EXPERT_SECOND") or "llama-3.3-70b-versatile").strip()
 _ENV_MODEL = (os.environ.get("CAPZO_MODEL") or "").strip()
 OLLAMA_MODEL = _ENV_MODEL or "qwen2.5:3b"
 # Ordre de preference : rapide d'abord, puis plus gros. CAPZO_MODEL force un choix.
@@ -486,10 +493,35 @@ def _cloud_requete(payload, timeout=300):
     return urllib.request.urlopen(req, timeout=timeout)
 
 
-def _cloud_chat(messages, system, force_json=False, max_tokens=400, timeout=300):
+def _cloud_messages(messages):
+    """Convertit les pieces jointes en messages multimodal OpenAI.
+
+    Les images sont stockees dans la cle interne '_images' (voir app.py) pour ne
+    pas casser les moteurs locaux qui attendent du texte. Ici, on les envoie
+    comme 'image_url' au modele multimodal (Groq Qwen 3.8).
+    """
+    propres = []
+    for m in messages or []:
+        images = [b for b in (m.get("_images") or []) if b][:3]
+        role = m.get("role", "user")
+        if isinstance(m.get("content"), list):
+            # Deja au format multimodal (ex. decrire_images).
+            propres.append({"role": role, "content": m["content"][:4]})
+        elif images:
+            contenu = [{"type": "text", "text": str(m.get("content") or "")}]
+            for b64 in images:
+                contenu.append({"type": "image_url",
+                                "image_url": {"url": "data:image/jpeg;base64," + b64}})
+            propres.append({"role": role, "content": contenu})
+        else:
+            propres.append({"role": role, "content": str(m.get("content") or "")})
+    return propres
+
+
+def _cloud_chat(messages, system, force_json=False, max_tokens=400, timeout=300, modele=None):
     payload = {
-        "model": API_MODEL,
-        "messages": ([{"role": "system", "content": system}] if system else []) + messages,
+        "model": modele or API_MODEL,
+        "messages": ([{"role": "system", "content": system}] if system else []) + _cloud_messages(messages),
         "temperature": 0.3 if force_json else 0.7,
         "max_tokens": max_tokens,
         "stream": False,
@@ -501,10 +533,10 @@ def _cloud_chat(messages, system, force_json=False, max_tokens=400, timeout=300)
     return (data["choices"][0]["message"].get("content") or "").strip()
 
 
-def _cloud_stream(messages, system, max_tokens=400, timeout=300):
+def _cloud_stream(messages, system, max_tokens=400, timeout=300, modele=None):
     payload = {
-        "model": API_MODEL,
-        "messages": ([{"role": "system", "content": system}] if system else []) + messages,
+        "model": modele or API_MODEL,
+        "messages": ([{"role": "system", "content": system}] if system else []) + _cloud_messages(messages),
         "temperature": 0.7,
         "max_tokens": max_tokens,
         "stream": True,
@@ -596,8 +628,67 @@ def _fallback_texte(messages, system):
                            "Verifie la connexion, puis reessaie."))]
 
 
-def chat(messages, system=SYSTEM_BASE, model="openai", timeout=180, force_json=False, mode="auto", modele=None, profil="general", memoire=None):
+def experts():
+    """Cerveaux disponibles pour le mode Expert / Multi-IA."""
+    liste = []
+    if API_MODEL:
+        liste.append({"id": "auto", "nom": "Capzo (rapide)", "modele": API_MODEL,
+                      "vision": True})
+    if CLOUD_PRET and EXPERT_MODEL:
+        liste.append({"id": "expert", "nom": "Expert code & raisonnement",
+                      "modele": EXPERT_MODEL, "vision": False})
+    if CLOUD_PRET and EXPERT_SECOND:
+        liste.append({"id": "multi", "nom": "Multi-IA (3 avis)",
+                      "modele": EXPERT_SECOND, "vision": False})
+    return liste
+
+
+def _expert(messages, system, expert, max_tokens=800):
+    """Route vers un autre modele, ou demande l'avis de plusieurs puis synthese."""
+    if expert == "multi":
+        modeles = []
+        for m in (API_MODEL, EXPERT_MODEL, EXPERT_SECOND):
+            if m and m not in modeles:
+                modeles.append(m)
+        modeles = modeles[:2]
+        if not modeles:
+            raise RuntimeError("Aucun modele expert configure.")
+        avis = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(modeles)) as pool:
+            taches = [pool.submit(_cloud_chat, messages, system, max_tokens=max_tokens,
+                                  timeout=180, modele=m) for m in modeles]
+            for tache in taches:
+                try:
+                    texte = tache.result(timeout=200).strip()
+                    if texte:
+                        avis.append(texte)
+                except Exception:
+                    continue
+        if not avis:
+            raise RuntimeError("Les modeles experts sont momentanement indisponibles.")
+        if len(avis) == 1:
+            return avis[0]
+        synthese = "Tu es Capzo IA. Fusionne les deux avis d'experts ci-dessous en UNE reponse " \
+                   "claire, exacte et concise en francais. Conserve les points ou ils sont " \
+                   "d'accord, tranche s'ils different, et ne mentionne pas les modeles.\n\n"
+        for i, avis_i in enumerate(avis, 1):
+            synthese += f"=== Avis {i} ===\n{avis_i[:3500]}\n\n"
+        try:
+            return _cloud_chat([{"role": "user", "content": synthese}], "",
+                               max_tokens=max_tokens, timeout=180).strip() or avis[0]
+        except Exception:
+            return avis[0]
+    return _cloud_chat(messages, system, max_tokens=max_tokens, timeout=180,
+                       modele=expert if expert not in ("auto", "local", "online") else None)
+
+
+def chat(messages, system=SYSTEM_BASE, model="openai", timeout=180, force_json=False, mode="auto", modele=None, profil="general", memoire=None, expert=None):
     """mode: 'auto' (cloud si configure, sinon local, sinon secours), 'local', 'online'."""
+    if expert and expert != "auto" and CLOUD_PRET:
+        try:
+            return _expert(messages, system, expert)
+        except Exception:
+            pass  # repli sur le moteur normal
     if system == SYSTEM_BASE and profil != "general":
         system = systeme_pour(profil, memoire)
     elif memoire and system and memoire not in (system or ""):
@@ -623,9 +714,23 @@ def chat(messages, system=SYSTEM_BASE, model="openai", timeout=180, force_json=F
     return _pollinations_chat(messages, system, model, timeout)
 
 
-def chat_stream(messages, system=None, mode="auto", modele=None, reflexion="equilibre", profil="general", memoire=None):
+def chat_stream(messages, system=None, mode="auto", modele=None, reflexion="equilibre", profil="general", memoire=None, expert=None):
     """Genere des evenements ('delta', texte) puis ('stats', {...}). Ne leve jamais."""
     system = system or systeme_pour(profil, memoire)
+    if expert and expert != "auto" and CLOUD_PRET:
+        try:
+            texte = _expert(messages, system, expert,
+                            max_tokens=budget_tokens(reflexion, profil))
+            if texte:
+                # On decoupe en petits morceaux pour garder l'effet "flux".
+                for i in range(0, len(texte), 90):
+                    yield "delta", texte[i:i + 90]
+                yield "stats", {"total": 0, "premier": 0, "reflexion": None,
+                                "tokens": 0, "tok_s": 0, "chargement": 0,
+                                "cloud": True, "expert": expert}
+                return
+        except Exception:
+            pass  # repli sur le flux normal
     if memoire and system and memoire not in system:
         system = system + "\n" + memoire
     budget = budget_tokens(reflexion, profil)
@@ -714,34 +819,71 @@ def modeles_vision():
     return [n for n in _modeles_installes() if "vision" in capacites(n)]
 
 
+def vision_disponible():
+    """Vrai si au moins un modele (cloud ou local) sait lire les images."""
+    return bool(CLOUD_PRET and VISION_MODEL) or bool(modeles_vision())
+
+
 def decrire_images(images_b64, question="Decris cette image en francais, en 3 phrases precises."):
-    """Fait parler le modele de vision sur une ou plusieurs images."""
+    """Fait parler un modele de vision sur une ou plusieurs images.
+
+    Cloud d'abord (Groq Qwen 3.8 multimodal), puis Ollama local, puis un
+    apercu local simple pour ne jamais laisser l'utilisateur sans reponse.
+    """
+    images = [b for b in (images_b64 or []) if b][:3]
+    if not images:
+        return ""
+
+    # 1) Modele cloud multimodal (celui deja paye/utilise par Capzo).
+    if CLOUD_PRET and VISION_MODEL:
+        try:
+            contenu = [{"type": "text", "text": question}]
+            for b64 in images:
+                contenu.append({"type": "image_url",
+                                "image_url": {"url": "data:image/jpeg;base64," + b64}})
+            return _cloud_chat([{"role": "user", "content": contenu}], "",
+                               max_tokens=320, timeout=180,
+                               modele=VISION_MODEL or API_MODEL)
+        except Exception:
+            pass
+
+    # 2) Petits modeles Ollama locaux (si l'utilisateur en a installe).
     modeles = modeles_vision()
-    if not modeles or not images_b64:
-        return ""
-    nom = modeles[0]
+    if modeles:
+        try:
+            payload = {
+                "model": modeles[0],
+                "messages": [{"role": "user", "content": question, "images": images}],
+                "stream": False,
+                "keep_alive": "15m",
+                "options": {"temperature": 0.2, "num_predict": 220, "num_ctx": 4096},
+            }
+            req = urllib.request.Request(
+                OLLAMA_URL + "/api/chat",
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=120) as r:
+                data = json.loads(r.read().decode("utf-8", "replace"))
+            texte = (data.get("message") or {}).get("content", "").strip()
+            if texte:
+                return texte
+        except Exception:
+            pass
+
+    # 3) Apercu local (dimensions + couleurs) pour ne pas perdre l'information.
     try:
-        contenu = [{"type": "text", "text": question}]
-        for b64 in images_b64[:3]:
-            contenu.append({"type": "image_url", "image_url": {"url": "data:image/jpeg;base64," + b64}})
-        payload = {
-            "model": nom,
-            "messages": [{"role": "user", "content": question, "images": images_b64[:3]}],
-            "stream": False,
-            "keep_alive": "15m",
-            "options": {"temperature": 0.2, "num_predict": 220, "num_ctx": 4096},
-        }
-        req = urllib.request.Request(
-            OLLAMA_URL + "/api/chat",
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=300) as r:
-            data = json.loads(r.read().decode("utf-8", "replace"))
-        return (data.get("message") or {}).get("content", "").strip()
+        import base64 as _b64
+        import io as _io
+        from PIL import Image as _Image
+        im = _Image.open(_io.BytesIO(_b64.b64decode(images[0]))).convert("RGB")
+        petit = im.resize((1, 1))
+        r, g, b = petit.getpixel((0, 0))
+        return (f"Image recue ({im.width}x{im.height} px, dominante RGB {r},{g},{b}). "
+                "Le service de vision est momentanement indisponible.")
     except Exception:
-        return ""
+        return "Image recue, analyse indisponible pour le moment."
 
 
 def veut_media(message):
@@ -786,21 +928,27 @@ def _repli_video(message):
     })
 
 
-def decide(messages, mode="auto", modele=None, profil="general", memoire=None):
+def decide(messages, mode="auto", modele=None, profil="general", memoire=None, expert=None):
     """Renvoie ('text', texte) ou ('image', ...) ou ('animation', ...). Ne leve jamais."""
     system = systeme_pour(profil)
     if memoire:
         system = system + "\n\n" + memoire
     dernier_brut = ""
+    images_jointes = False
     for m in reversed(messages):
         if m.get("role") == "user":
-            dernier_brut = m.get("content") or ""
+            dernier_brut = m.get("_texte") or m.get("content") or ""
+            images_jointes = bool(m.get("_images"))
             break
     dernier = dernier_brut.lower()
 
     veut_anim = any(k in dernier for k in MOTS_ANIM)
     veut_image = any(k in dernier for k in MOTS_IMAGE)
     veut_video = any(k in dernier for k in MOTS_VIDEO)
+
+    # Une image jointe = l'utilisateur veut en parler, pas en generer une nouvelle.
+    if images_jointes:
+        veut_anim = veut_image = veut_video = False
 
     # En local (pas de cle cloud), on evite l'appel LLM pour les medias : trop lent
     # (30-90 s sur ce CPU). On utilise un repli direct. Avec une cle Groq, le LLM
@@ -815,7 +963,8 @@ def decide(messages, mode="auto", modele=None, profil="general", memoire=None):
 
     if not veut_anim and not veut_image and not veut_video:
         try:
-            return ("text", chat(messages, system=system, mode=mode, modele=modele, profil=profil))
+            return ("text", chat(messages, system=system, mode=mode, modele=modele,
+                                 profil=profil, expert=expert))
         except LimiteIA as e:
             return ("text", "⏳ Le service en ligne est momentanément limité. "
                             f"Réessaie dans {e.secondes} s.")

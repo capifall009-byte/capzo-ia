@@ -14,6 +14,7 @@ import webbrowser
 
 from flask import (Flask, Response, g, jsonify, redirect, render_template, render_template_string,
                    request, send_from_directory, stream_with_context)
+from werkzeug.utils import secure_filename
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -62,6 +63,13 @@ app.config["MAX_CONTENT_LENGTH"] = 120 * 1024 * 1024  # 120 Mo par envoi
 
 MAX_MESSAGES = 20
 MAX_CHARS = 2000
+MAX_PIECES = 8
+# Tailles maximum par type de piece jointe (securite / abus memoire).
+MAX_TAILLES = {"image": 20 * 1024 * 1024, "video": 60 * 1024 * 1024,
+               "pdf": 20 * 1024 * 1024, "texte": 10 * 1024 * 1024,
+               "autre": 5 * 1024 * 1024}
+EXTENSIONS_OK = (fichiers.IMAGE_EXT | fichiers.VIDEO_EXT | {".pdf"} |
+                 fichiers.TEXT_EXT) if hasattr(fichiers, "IMAGE_EXT") else None
 MOT_DE_PASSE = (os.environ.get("CAPZO_MOT_DE_PASSE") or "").strip()
 
 
@@ -93,10 +101,31 @@ def _identifier_visiteur():
 
 @app.after_request
 def _poser_cookie_visiteur(reponse):
+    # En-tetes de securite : beneficiaries meme sur les reponses d'erreur.
+    reponse.headers.setdefault("X-Content-Type-Options", "nosniff")
+    reponse.headers.setdefault("X-Frame-Options", "DENY")
+    reponse.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    reponse.headers.setdefault("Permissions-Policy",
+                               "camera=(self), microphone=(self), fullscreen=(self), "
+                               "geolocation=(), payment=()")
+    reponse.headers.setdefault("Cross-Origin-Resource-Policy", "same-origin")
+    reponse.headers.setdefault("X-Permitted-Cross-Domain-Policies", "none")
+    reponse.headers.setdefault(
+        "Content-Security-Policy",
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
+        "font-src 'self' https://cdnjs.cloudflare.com data:; "
+        "img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; "
+        "connect-src 'self' https:; object-src 'none'; base-uri 'self'; "
+        "form-action 'self'; frame-ancestors 'none'")
+    if request.is_secure:
+        reponse.headers.setdefault("Strict-Transport-Security",
+                                   "max-age=31536000; includeSubDomains")
     vid = getattr(g, "visiteur_id", None)
     if vid:
         reponse.set_cookie("capzo_vid", vid, max_age=60 * 60 * 24 * 365,
-                           samesite="Lax", httponly=True)
+                           samesite="Lax", httponly=True, secure=request.is_secure)
     return reponse
 
 
@@ -300,6 +329,8 @@ def api_connecteurs():
         "outils": [t["function"]["name"] for t in agent.OUTILS],
         "cloud": bool(llm.CLOUD_PRET),
         "modele_cloud": llm.API_MODEL or None,
+        "vision": llm.vision_disponible(),
+        "experts": llm.experts(),
     })
 
 
@@ -562,8 +593,22 @@ def api_video(nom):
 
 
 def _enregistrer_piece(f):
-    """Sauvegarde un fichier et l'analyse en local. Retourne les infos publiques."""
-    nom = os.path.basename(f.filename).replace("\\", "_")
+    """Sauvegarde un fichier (nom nettoye, taille verifiee) et l'analyse.
+
+    Leve ValueError si le fichier est refuse ; l'appelant renvoie un JSON propre.
+    """
+    nom = secure_filename(f.filename or "")
+    if not nom or len(nom) > 180:
+        raise ValueError("Nom de fichier invalide.")
+    ext = os.path.splitext(nom)[1].lower()
+    if EXTENSIONS_OK and ext not in EXTENSIONS_OK:
+        raise ValueError("Type de fichier non autorise.")
+    genre = fichiers.genre(nom, f.mimetype)
+    limite = MAX_TAILLES.get(genre, MAX_TAILLES["autre"])
+    annonce = getattr(f, "content_length", 0) or 0
+    if annonce and annonce > limite:
+        raise ValueError(f"Fichier trop volumineux (max {limite // (1024 * 1024)} Mo).")
+
     ident = uuid.uuid4().hex[:10]
     chemin = os.path.join(UPLOADS, ident + "_" + nom)
     f.save(chemin)
@@ -572,33 +617,43 @@ def _enregistrer_piece(f):
         taille = os.path.getsize(chemin)
     except Exception:
         taille = 0
-    g = fichiers.genre(nom, f.mimetype)
-    texte = fichiers.extraire_texte(chemin) if g in ("texte", "pdf") else ""
+    if taille > limite:
+        try:
+            os.remove(chemin)
+        except Exception:
+            pass
+        raise ValueError(f"Fichier trop volumineux (max {limite // (1024 * 1024)} Mo).")
+    texte = fichiers.extraire_texte(chemin) if genre in ("texte", "pdf") else ""
     description = ""
     apercu = ""
+    images = []
 
-    if g == "image":
-        b64 = fichiers.image_b64(chemin)
-        apercu = "data:image/jpeg;base64," + b64 if b64 else ""
+    if genre == "image":
+        b64 = fichiers.image_b64(chemin, max_cote=1024)
         if b64:
+            images = [b64]
+            apercu = "data:image/jpeg;base64," + b64
             description = llm.decrire_images(
-                [b64], "Decris cette image en francais en 3 phrases : sujet, couleurs, ambiance."
+                [b64], "Analyse precisement cette image en francais (3 phrases) : "
+                       "sujet principal, détails visibles, texte eventuel, ambiance."
             )
-    elif g == "video":
-        images_v = fichiers.frames_video_b64(chemin, nombre=2)
-        if images_v:
-            apercu = "data:image/jpeg;base64," + images_v[0]
+    elif genre == "video":
+        images = fichiers.frames_video_b64(chemin, nombre=2)
+        if images:
+            apercu = "data:image/jpeg;base64," + images[0]
             description = llm.decrire_images(
-                images_v, "Ces images viennent d'une video. Decris en francais la scene, en 3 phrases."
+                images, "Ces images viennent d'une video. Decris en francais la scene, "
+                        "les personnes et le texte visible, en 3 phrases."
             )
 
-    PIECES[ident] = {"nom": nom, "genre": g, "texte": texte, "description": description,
+    PIECES[ident] = {"nom": nom, "genre": genre, "texte": texte, "description": description,
                      "taille": taille, "chemin": chemin, "t": time.time(),
-                     "apercu": apercu}
+                     "apercu": apercu, "images": images}
     _nettoyer_pieces()
 
-    return {"id": ident, "nom": nom, "genre": g, "taille": taille,
+    return {"id": ident, "nom": nom, "genre": genre, "taille": taille,
             "apercu": apercu, "description": description,
+            "vision": llm.vision_disponible(),
             "extrait": (texte[:300] + ("…" if len(texte) > 300 else ""))}
 
 
@@ -608,8 +663,13 @@ def api_upload():
     f = request.files.get("fichier")
     if not f or not f.filename:
         return jsonify({"error": "Aucun fichier recu."}), 400
-    infos = _enregistrer_piece(f)
-    infos["vision"] = bool(llm.modeles_vision())
+    try:
+        infos = _enregistrer_piece(f)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": "Analyse impossible : " + str(e)[:140]}), 400
+    infos["vision"] = llm.vision_disponible()
     return jsonify(infos)
 
 
@@ -647,6 +707,21 @@ def _bloc_fichiers(identifiants):
             "\n[Fin des fichiers joints]")
 
 
+def _images_fichiers(identifiants):
+    """Base64 des images jointes, pour envoi au modele multimodal."""
+    if not isinstance(identifiants, list):
+        return []
+    images = []
+    for ident in identifiants[:6]:
+        p = PIECES.get(str(ident))
+        if not p:
+            continue
+        for b64 in (p.get("images") or []):
+            if b64 and b64 not in images:
+                images.append(b64)
+    return images[:3]
+
+
 def _preparer_profil(body):
     """Profil d'usage : general, education, code ou loisir."""
     profil = (body.get("profil") or "general").lower()
@@ -669,11 +744,25 @@ def _preparer(body):
     modele = (body.get("modele") or "").strip() or None
     if modele in ("auto", "local", "online"):
         modele = None
+    # On garde le texte brut : les mots de la description de piece jointe ne doivent
+    # pas declencher la generation d'une image (ex. "image" present dans le bloc).
+    messages[-1]["_texte"] = messages[-1]["content"]
     bloc = _bloc_fichiers(body.get("fichiers"))
     if bloc:
         messages[-1]["content"] = messages[-1]["content"] + bloc
+    images = _images_fichiers(body.get("fichiers"))
+    if images:
+        messages[-1]["_images"] = images
     memoire = str(body.get("memoire") or "").strip()[:4000]
     return messages, mode, modele, _preparer_profil(body), memoire
+
+
+def _preparer_expert(body):
+    """Mode Expert / Multi-IA (optionnel, repli automatique si indisponible)."""
+    expert = str(body.get("expert") or "auto").strip().lower()
+    if expert not in ("auto", "expert", "multi"):
+        return "auto"
+    return expert
 
 
 def _enrichir(demande):
@@ -708,19 +797,21 @@ def _enrichir(demande):
 def api_chat():
     body = request.get_json(force=True, silent=True) or {}
     messages, mode, modele, profil, memoire_ctx = _preparer(body)
+    expert = _preparer_expert(body)
     if messages is None:
         return jsonify({"error": "Format de conversation invalide."}), 400
-    profil = llm.profil_auto(profil, messages[-1]["content"])
+    brut = messages[-1].get("_texte") or messages[-1]["content"]
+    profil = llm.profil_auto(profil, brut)
 
     memoire_ctx = (memoire_ctx or "").strip()[:4000]
     memoire_ctx = memoire_ctx or memoire.contexte()
-    enrichi = _enrichir(messages[-1]["content"])
+    enrichi = _enrichir(brut)
     if enrichi:
         memoire_ctx = (memoire_ctx + "\n\n" + enrichi).strip()
-    memoire.ajouter_message("user", messages[-1]["content"])
+    memoire.ajouter_message("user", brut)
     try:
         type_reponse, contenu = llm.decide(messages, mode=mode, modele=modele, profil=profil,
-                                           memoire=memoire_ctx)
+                                           memoire=memoire_ctx, expert=expert)
     except Exception as e:
         return jsonify({"error": f"Impossible de joindre le service IA ({e})."}), 502
 
@@ -791,18 +882,21 @@ def api_chat_stream():
     """Reponse en flux : le texte s'affiche pendant qu'il est genere."""
     body = request.get_json(force=True, silent=True) or {}
     messages, mode, modele, profil, memoire_ctx = _preparer(body)
+    expert = _preparer_expert(body)
     reflexion = (body.get("reflexion") or "equilibre").lower()
     if reflexion not in ("rapide", "equilibre", "approfondi"):
         reflexion = "equilibre"
+    brut = (messages[-1].get("_texte") or messages[-1]["content"]) if messages else ""
+    images_jointes = bool(messages[-1].get("_images")) if messages else False
     if messages is not None:
-        profil = llm.profil_auto(profil, messages[-1]["content"])
+        profil = llm.profil_auto(profil, brut)
     system = llm.systeme_pour(profil)
     if not (memoire_ctx or "").strip():
         memoire_ctx = memoire.contexte()
     if (memoire_ctx or "").strip():
         system = system + "\n\n" + memoire_ctx
     if messages is not None:
-        enrichi = _enrichir(messages[-1]["content"])
+        enrichi = _enrichir(brut)
         if enrichi:
             system = system + "\n\n" + enrichi
 
@@ -816,8 +910,8 @@ def api_chat_stream():
             return
 
         if messages is not None:
-            memoire.ajouter_message("user", messages[-1]["content"])
-        demande = messages[-1]["content"]
+            memoire.ajouter_message("user", brut)
+        demande = brut
 
         # Sans cle cloud, le petit modele local produit des quiz approximatifs :
         # on utilise un generateur deterministe (instantane et fiable).
@@ -831,7 +925,7 @@ def api_chat_stream():
                 yield evt({"type": "fin"})
                 return
 
-        if llm.veut_media(demande):
+        if llm.veut_media(demande) and not images_jointes:
             yield evt({"type": "attente", "text": "Preparation du media..."})
             try:
                 type_reponse, contenu = llm.decide(messages, mode=mode, modele=modele,
@@ -872,7 +966,7 @@ def api_chat_stream():
         try:
             for genre, valeur in llm.chat_stream(messages, system=system, mode=mode,
                                                  modele=modele, reflexion=reflexion,
-                                                 profil=profil):
+                                                 profil=profil, expert=expert):
                 if genre == "delta":
                     dernier_texte += str(valeur or "")
                     yield evt({"type": "delta", "text": valeur})
@@ -902,6 +996,23 @@ def api_modeles():
         "actif": llm.modele_actif(),
         "moteur": llm.moteur_actuel(),
         "modeles": [{"nom": n, "vision": n in vision} for n in installes],
+        "vision": llm.vision_disponible(),
+        "experts": llm.experts(),
+    })
+
+
+@app.route("/api/intelligences")
+def api_intelligences():
+    """Cerveaux disponibles : principal multimodal, experts et locaux."""
+    return jsonify({
+        "principal": llm.API_MODEL,
+        "vision": llm.vision_disponible(),
+        "experts": llm.experts(),
+        "securite": {
+            "headers": True,
+            "cookie_secure": True,
+            "uploads_verifies": True,
+        },
     })
 
 
@@ -919,7 +1030,7 @@ def api_cerveaux():
         liste.append({**m, "installe": present,
                       "en_cours": INSTALLATIONS.get(m["nom"], {}).get("etat") == "encours"})
     return jsonify({"installes": sorted(installes), "catalogue": liste,
-                    "vision": bool(llm.modeles_vision())})
+                    "vision": llm.vision_disponible()})
 
 
 @app.route("/api/installer", methods=["POST"])
