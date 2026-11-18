@@ -1114,98 +1114,122 @@ function ouvrirPanneau(html){
 }
 
 async function panneauConnecteurs(){
-  ouvrirPanneau('<h3>🔌 Connecteurs</h3><p style="opacity:.7">Chargement…</p>');
+  ouvrirPanneau('<h3>Connecteurs</h3><p style="opacity:.7">Chargement…</p>');
   let d = {};
   try{ d = await (await fetch('/api/connecteurs')).json(); }catch(e){}
   const mail = d.mail || {}, ag = d.agenda || {}, ig = d.instagram || {}, g = d.google || {}, soc = d.sociaux || {};
   const dot = ok => '<span class="pastille" style="background:' + (ok ? '#10b981' : '#f59e0b') + '"></span>';
-  const html =
-    '<h3>🔌 Connecteurs</h3>' +
-    '<div class="connecteur"><b>' + dot(g.pret) + 'Compte Google (1 clic)</b><br>' +
-      (g.pret
-        ? 'Connecté : ' + echapper(g.email || 'compte Google') +
-          '<br><button class="lien-outil" id="btn-deco-google" type="button">Déconnecter</button>'
-        : (g.configure
-            ? 'Non connecté.<br><button class="lien-outil" id="btn-co-google" type="button">Connecter mon compte Google</button>' +
-              '<br><span style="opacity:.7">Un clic : Google demande l\'autorisation, puis Capzo lit tes mails et ton agenda (sans mot de passe d\'application).</span>'
-            : 'Non configuré côté serveur.<br><code>CAPZO_GOOGLE_CLIENT_ID</code> et <code>CAPZO_GOOGLE_CLIENT_SECRET</code> dans <code>.env</code>.<br>Voir README.')) +
-      '</div>' +
-    '<div class="connecteur"><b>' + dot(mail.pret) + 'Messagerie</b><br>' +
-      (mail.pret
-        ? 'Connecté : ' + echapper(mail.adresse || '')
-        : 'Non configurée.<br><code>CAPZO_MAIL_ADRESSE</code> et <code>CAPZO_MAIL_MDP</code> dans <code>.env</code>.' +
-          '<br>Google : crée un <b>mot de passe d\'application</b> (2FA obligatoire), pas ton mot de passe habituel.') +
-      '<br><span style="opacity:.7">Essaie : « lis mes derniers mails » · « envoie un mail à … »</span></div>' +
-    '<div class="connecteur"><b>' + dot(ag.pret) + 'Agenda</b><br>' +
-      (ag.pret
-        ? 'Lecture activée' + (ag.ecriture ? ' + écriture CalDAV.' : ' (écriture : fichier .ics en un clic).')
-        : 'Non configuré.<br><code>CAPZO_AGENDA_ICS</code> = adresse iCal secrète de ton agenda.') +
-      '<br><span style="opacity:.7">Essaie : « mes rendez-vous cette semaine » · « ajoute un rdv mardi 14h »</span></div>' +
-    '<div class="connecteur"><b>' + dot(ig.pret) + 'Instagram</b><br>' +
-      (ig.pret
-        ? 'Compte : ' + echapper(ig.compte || '')
-        : 'Non configuré.<br><code>CAPZO_IG_USER</code> + <code>CAPZO_IG_TOKEN</code> (compte professionnel + app Meta).') +
-      '<br><span style="opacity:.7">Essaie : « stats de mon Instagram » · « publie ce Reel »</span></div>' +
-    '<div class="connecteur"><b>' + dot(soc.instagram && soc.instagram.pret) + 'Instagram (OAuth Meta)</b><br>' +
-      ((soc.instagram && soc.instagram.pret)
-        ? 'Connecté : ' + echapper(soc.instagram.compte || 'compte Instagram') +
-          '<br><button class="lien-outil" data-deco="instagram" type="button">Déconnecter</button>'
-        : ((soc.instagram && soc.instagram.configure)
-            ? 'Prêt à connecter.<br><button class="lien-outil" data-social="instagram" type="button">Connecter Instagram</button>'
-            : 'Non configuré côté serveur.') +
-      '<br><input id="tok-instagram" placeholder="Ou colle un jeton Instagram ici" style="width:100%;margin-top:6px;padding:6px;border-radius:8px;border:1px solid rgba(127,127,127,.3);background:transparent;color:inherit;font-size:12px">' +
-      '<button class="lien-outil" data-token="instagram" type="button" style="margin-top:6px">Enregistrer le jeton</button>' +
-      '</div>' +
-    '<div class="connecteur"><b>' + dot(soc.tiktok && soc.tiktok.pret) + 'TikTok (OAuth officiel)</b><br>' +
-      ((soc.tiktok && soc.tiktok.pret)
-        ? 'Connecté : ' + echapper(soc.tiktok.compte || 'compte TikTok') +
-          '<br><button class="lien-outil" data-deco="tiktok" type="button">Déconnecter</button>'
-        : ((soc.tiktok && soc.tiktok.configure)
-            ? 'Prêt à connecter.<br><button class="lien-outil" data-social="tiktok" type="button">Connecter TikTok</button>'
-            : 'Non configuré côté serveur.') +
-      '<br><input id="tok-tiktok" placeholder="Ou colle un jeton TikTok ici" style="width:100%;margin-top:6px;padding:6px;border-radius:8px;border:1px solid rgba(127,127,127,.3);background:transparent;color:inherit;font-size:12px">' +
-      '<button class="lien-outil" data-token="tiktok" type="button" style="margin-top:6px">Enregistrer le jeton</button>' +
-      '</div>' +
-    '<div class="connecteur"><b>' + dot(soc.windsor && soc.windsor.configure) + 'Windsor IA (passerelle générique)</b><br>' +
-      ((soc.windsor && soc.windsor.configure)
-        ? 'Passerelle renseignée : ' + echapper(soc.windsor.nom || 'Windsor IA') +
-          '<br><button class="lien-outil" id="btn-test-windsor" type="button">Tester la connexion</button> <span id="test-windsor" style="opacity:.7"></span>'
-        : 'Non configuré. Ajoute <code>CAPZO_WINDSOR_URL</code> et <code>CAPZO_WINDSOR_KEY</code> dans Render. La clé n\'est jamais affichée ici.') +
-      '<br><span style="opacity:.7">Sert de hub générique pour brancher d\'autres services sans changer l\'hébergement.</span></div>' +
-    '<div class="connecteur"><b>🤖 OpenJarvis (GitHub)</b><br>' +
-      '<span style="opacity:.7">Assistant personnel open source (open-jarvis/OpenJarvis).</span><br>' +
-      '<a class="lien-outil" href="https://github.com/open-jarvis/OpenJarvis" target="_blank">Voir le projet</a>' +
-      '<br><span style="opacity:.6;font-size:11px">Pour l\'utiliser comme moteur : CAPZO_OPENJARVIS_URL + CAPZO_OPENJARVIS_KEY.</span></div>' +
-    '<div class="connecteur"><b>🧬 Hermes Agent (GitHub)</b><br>' +
-      '<span style="opacity:.7">Agent qui apprend avec toi (NousResearch/hermes-agent).</span><br>' +
-      '<a class="lien-outil" href="https://github.com/NousResearch/hermes-agent" target="_blank">Voir le projet</a>' +
-      '<br><span style="opacity:.6;font-size:11px">Pour l\'utiliser comme moteur : CAPZO_HERMES_URL + CAPZO_HERMES_KEY.</span></div>' +
-    '<div class="connecteur"><b>' + dot(d.cloud) + 'Moteur rapide</b><br>' +
-      (d.cloud
-        ? 'Clé API active : ' + echapper(d.modele_cloud || '')
-        : 'Aucune clé API : les réponses passent par Ollama (lent sur ce PC).') + '</div>' +
-    '<div class="connecteur"><b>' + dot(reveilActif) + 'Réveil « Hey Capzo »</b><br>' +
-      (reveilActif ? 'Écoute en cours.' : 'Désactivé.') +
-      '<br><span style="opacity:.7">Fonctionne quand Capzo est ouvert. Installe-le sur l\'écran d\'accueil pour l\'utiliser comme une app.</span></div>';
-  ouvrirPanneau(html);
+  const parts = [];
+  parts.push('<h3>Connecteurs</h3>');
+  // Google
+  parts.push('<div class="connecteur"><b>' + dot(g.pret) + 'Compte Google (1 clic)</b><br>');
+  if (g.pret) {
+    parts.push('Connecte : ' + echapper(g.email || 'compte Google') +
+      '<br><button class="lien-outil" id="btn-deco-google" type="button">Deconnecter</button>');
+  } else if (g.configure) {
+    parts.push('Non connecte.<br><button class="lien-outil" id="btn-co-google" type="button">Connecter mon compte Google</button>' +
+      '<br><span style="opacity:.7">Un clic : Google demande l\'autorisation, puis Capzo lit tes mails et ton agenda.</span>');
+  } else {
+    parts.push('Non configure cote serveur.<br><code>CAPZO_GOOGLE_CLIENT_ID</code> et <code>CAPZO_GOOGLE_CLIENT_SECRET</code> dans Render.');
+  }
+  parts.push('</div>');
+  // Messagerie
+  parts.push('<div class="connecteur"><b>' + dot(mail.pret) + 'Messagerie</b><br>');
+  if (mail.pret) {
+    parts.push('Connecte : ' + echapper(mail.adresse || ''));
+  } else {
+    parts.push('Non configuree.<br><code>CAPZO_MAIL_ADRESSE</code> et <code>CAPZO_MAIL_MDP</code> dans Render.');
+  }
+  parts.push('</div>');
+  // Agenda
+  parts.push('<div class="connecteur"><b>' + dot(ag.pret) + 'Agenda</b><br>');
+  if (ag.pret) {
+    parts.push('Lecture activee' + (ag.ecriture ? ' + ecriture CalDAV.' : ' (ecriture : fichier .ics en un clic).'));
+  } else {
+    parts.push('Non configure.<br><code>CAPZO_AGENDA_ICS</code> = adresse iCal secrete.');
+  }
+  parts.push('</div>');
+  // Instagram
+  parts.push('<div class="connecteur"><b>' + dot(ig.pret) + 'Instagram</b><br>');
+  if (ig.pret) {
+    parts.push('Compte : ' + echapper(ig.compte || ''));
+  } else {
+    parts.push('Non configure.<br><code>CAPZO_IG_USER</code> + <code>CAPZO_IG_TOKEN</code>.');
+  }
+  parts.push('</div>');
+  // Sociaux
+  const soc = d.sociaux || {};
+  // Instagram OAuth
+  parts.push('<div class="connecteur"><b>' + dot(soc.instagram && soc.instagram.pret) + 'Instagram (OAuth Meta)</b><br>');
+  if (soc.instagram && soc.instagram.pret) {
+    parts.push('Connecte : ' + echapper(soc.instagram.compte || 'compte Instagram') +
+      '<br><button class="lien-outil" data-deco="instagram" type="button">Deconnecter</button>');
+  } else if (soc.instagram && soc.instagram.configure) {
+    parts.push('Pret a connecter.<br><button class="lien-outil" data-social="instagram" type="button">Connecter Instagram</button>');
+  } else {
+    parts.push('Non configure cote serveur.');
+  }
+  parts.push('</div>');
+  // TikTok
+  parts.push('<div class="connecteur"><b>' + dot(soc.tiktok && soc.tiktok.pret) + 'TikTok (OAuth officiel)</b><br>');
+  if (soc.tiktok && soc.tiktok.pret) {
+    parts.push('Connecte : ' + echapper(soc.tiktok.compte || 'compte TikTok') +
+      '<br><button class="lien-outil" data-deco="tiktok" type="button">Deconnecter</button>');
+  } else if (soc.tiktok && soc.tiktok.configure) {
+    parts.push('Pret a connecter.<br><button class="lien-outil" data-social="tiktok" type="button">Connecter TikTok</button>');
+  } else {
+    parts.push('Non configure cote serveur.');
+  }
+  parts.push('</div>');
+  // Windsor
+  parts.push('<div class="connecteur"><b>' + dot(soc.windsor && soc.windsor.configure) + 'Windsor IA (passerelle)</b><br>');
+  if (soc.windsor && soc.windsor.configure) {
+    parts.push('Passerelle renseignee : ' + echapper(soc.windsor.nom || 'Windsor IA') +
+      '<br><button class="lien-outil" id="btn-test-windsor" type="button">Tester la connexion</button> <span id="test-windsor" style="opacity:.7"></span>');
+  } else {
+    parts.push('Non configure. Ajoute CAPZO_WINDSOR_URL et CAPZO_WINDSOR_KEY dans Render.');
+  }
+  parts.push('</div>');
+  // OpenJarvis
+  parts.push('<div class="connecteur"><b>OpenJarvis (GitHub)</b><br>');
+  parts.push('<span style="opacity:.7">Assistant personnel open source.</span><br>');
+  parts.push('<a class="lien-outil" href="https://github.com/open-jarvis/OpenJarvis" target="_blank">Voir le projet</a>');
+  parts.push('</div>');
+  // Hermes
+  parts.push('<div class="connecteur"><b>Hermes Agent (GitHub)</b><br>');
+  parts.push('<span style="opacity:.7">Agent qui apprend avec toi.</span><br>');
+  parts.push('<a class="lien-outil" href="https://github.com/NousResearch/hermes-agent" target="_blank">Voir le projet</a>');
+  parts.push('</div>');
+  // Moteur
+  parts.push('<div class="connecteur"><b>' + dot(d.cloud) + 'Moteur rapide</b><br>');
+  if (d.cloud) {
+    parts.push('Cle API active : ' + echapper(d.modele_cloud || ''));
+  } else {
+    parts.push('Aucune cle API : reponses via Ollama.');
+  }
+  parts.push('</div>');
+  // Reveil
+  parts.push('<div class="connecteur"><b>' + dot(reveilActif) + 'Reveil Hey Capzo</b><br>');
+  parts.push(reveilActif ? 'Ecoute en cours.' : 'Desactive.');
+  parts.push('</div>');
+  ouvrirPanneau(parts.join(''));
   setTimeout(() => {
     const co = document.getElementById('btn-co-google');
-    if(co) co.onclick = () => { location.href = '/api/google/connexion'; };
+    if (co) co.onclick = () => { location.href = '/api/google/connexion'; };
     const deco = document.getElementById('btn-deco-google');
-    if(deco) deco.onclick = async () => {
+    if (deco) deco.onclick = async () => {
       await fetch('/api/google/deconnexion', { method: 'POST' });
       await fetch('/api/auth/deconnexion', { method: 'POST' });
-      await verifierConnexion();
       panneauConnecteurs();
     };
     document.querySelectorAll('[data-social]').forEach(b => {
       b.onclick = async () => {
-        try{
+        try {
           const r = await fetch('/api/social/' + encodeURIComponent(b.dataset.social) + '/url');
           const j = await r.json();
-          if(r.ok && j.url) location.href = j.url;
+          if (r.ok && j.url) location.href = j.url;
           else alert(j.error || 'Connexion impossible.');
-        }catch(e){ alert('Connexion impossible.'); }
+        } catch (e) { alert('Connexion impossible.'); }
       };
     });
     document.querySelectorAll('[data-deco]').forEach(b => {
@@ -1214,28 +1238,14 @@ async function panneauConnecteurs(){
         panneauConnecteurs();
       };
     });
-    document.querySelectorAll('[data-token]').forEach(b => {
-      b.onclick = async () => {
-        const service = b.dataset.token;
-        const input = document.getElementById('tok-' + service);
-        const token = input ? input.value.trim() : '';
-        if(!token){ alert('Colle un jeton d\'abord.'); return; }
-        const r = await fetch('/api/social/' + encodeURIComponent(service) + '/token', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token })
-        });
-        if(r.ok){ if(input) input.value = ''; panneauConnecteurs(); }
-        else { const j = await r.json().catch(()=>({})); alert(j.error || 'Enregistrement impossible.'); }
-      };
-    });
     const test = document.getElementById('btn-test-windsor');
-    if(test) test.onclick = async () => {
+    if (test) test.onclick = async () => {
       const zone = document.getElementById('test-windsor');
-      if(zone) zone.textContent = ' test…';
-      try{
+      if (zone) zone.textContent = ' test...';
+      try {
         const j = await (await fetch('/api/social/windsor/test')).json();
-        if(zone) zone.textContent = ' ' + (j.message || '');
-      }catch(e){ if(zone) zone.textContent = ' test impossible.'; }
+        if (zone) zone.textContent = ' ' + (j.message || '');
+      } catch (e) { if (zone) zone.textContent = ' test impossible.'; }
     };
   }, 80);
 }
