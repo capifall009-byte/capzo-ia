@@ -49,8 +49,8 @@ def _charger_env(chemin=None):
 _charger_env()
 
 from capzo import (agent, anim, apple_auth, auth, connecteurs, fichiers, github_auth,  # noqa: E402
-                   google_auth, hermes, images, instagram, internet, llm, maths, memoire, quiz,
-                   social, video, voix)
+                   google_auth, hermes, images, instagram, internet, llm, maths, memoire,
+                   openjarvis, quiz, social, video, voix)
 
 UPLOADS = os.path.join(BASE, "uploads")
 os.makedirs(UPLOADS, exist_ok=True)
@@ -629,22 +629,17 @@ def _enregistrer_piece(f):
     images = []
 
     if genre == "image":
+        # On ne fait pas de description cloud ici : elle ralentissait l'upload de
+        # plusieurs secondes et faisait ignorer le message envoye trop vite.
+        # Le modele multimodal recoit directement l'image (voir _images_fichiers).
         b64 = fichiers.image_b64(chemin, max_cote=1024)
         if b64:
             images = [b64]
             apercu = "data:image/jpeg;base64," + b64
-            description = llm.decrire_images(
-                [b64], "Analyse precisement cette image en francais (3 phrases) : "
-                       "sujet principal, détails visibles, texte eventuel, ambiance."
-            )
     elif genre == "video":
         images = fichiers.frames_video_b64(chemin, nombre=2)
         if images:
             apercu = "data:image/jpeg;base64," + images[0]
-            description = llm.decrire_images(
-                images, "Ces images viennent d'une video. Decris en francais la scene, "
-                        "les personnes et le texte visible, en 3 phrases."
-            )
 
     PIECES[ident] = {"nom": nom, "genre": genre, "texte": texte, "description": description,
                      "taille": taille, "chemin": chemin, "t": time.time(),
@@ -694,6 +689,10 @@ def _bloc_fichiers(identifiants):
             continue
         tete = f"- {p['nom']} ({p['genre']})"
         corps = p["description"] or p["texte"]
+        if not corps and p.get("genre") in ("image", "video"):
+            # Le contenu visuel est transmis au modele a part : inutile d'ajouter
+            # une phrase texte qui pourrait declencher une generation d'image.
+            continue
         if not corps:
             corps = "fichier recu, pas de texte exploitable."
         corps = corps[:2500]
@@ -812,6 +811,8 @@ def api_chat():
         journal = hermes.contexte()
         if journal:
             memoire_ctx = (memoire_ctx + "\n" + journal).strip()
+    if profil == "jarvis":
+        memoire_ctx = (memoire_ctx + "\n" + openjarvis.contexte(brut)).strip()
     memoire.ajouter_message("user", brut)
     try:
         type_reponse, contenu = llm.decide(messages, mode=mode, modele=modele, profil=profil,
@@ -909,6 +910,8 @@ def api_chat_stream():
             journal = hermes.contexte()
             if journal:
                 system = system + "\n" + journal
+        if profil == "jarvis":
+            system = system + "\n" + openjarvis.contexte(brut)
 
     def evt(charge):
         return "data: " + json.dumps(charge, ensure_ascii=False) + "\n\n"
@@ -1036,6 +1039,12 @@ def api_intelligences():
 def api_hermes_etat():
     """Journal d'apprentissage du mode Hermes (isolé par visiteur)."""
     return jsonify(hermes.etat())
+
+
+@app.route("/api/jarvis/etat")
+def api_jarvis_etat():
+    """Competences OpenJarvis disponibles dans le mode Jarvis."""
+    return jsonify(openjarvis.etat())
 
 
 @app.route("/api/cerveaux")

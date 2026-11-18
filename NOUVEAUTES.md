@@ -91,6 +91,24 @@ utilise un format d'échange particulier, transmets sa documentation pour l'adap
 - Les boutons de fournisseur non configurés sont désactivés avec un message clair (plus de
   « codes » bruts lors d'un clic sur Google).
 
+## 9. Photos lues directement, sans attente
+
+- Les photos jointes sont envoyées telles quelles au modèle multimodal : plus de description
+  cloud préalable (qui ralentissait l'envoi de plusieurs secondes).
+- Si tu appuies sur Envoi pendant qu'une photo se prépare, Capzo attend la fin de l'upload
+  au lieu d'ignorer ton message.
+
+## 10. Hermes et OpenJarvis dans Capzo
+
+- **🧬 Hermes** (inspiré de `NousResearch/hermes-agent`) : journal d'apprentissage persistant
+  par visiteur, outils Capzo et réponses qui s'adaptent à tes préférences.
+  Bouton « Activer le mode Hermes » dans les Connecteurs.
+- **🤖 Jarvis / OpenJarvis** (inspiré de `open-jarvis/OpenJarvis`, Stanford, Apache 2.0) :
+  compétences « local-first » — briefing du matin, recherche sourcée, assistant code, suivi
+  et orchestration d'outils. Bouton « Activer le mode Jarvis » dans les Connecteurs.
+- Les vrais dépôts Hermes et OpenJarvis sont des piles complètes (Python/Rust, modèles locaux)
+  trop lourdes pour l'hébergement gratuit : Capzo en garde les méthodes et la mémoire côté serveur.
+
 ## Sécurité
 
 - Jetons Google, GitHub et sociaux isolés par visiteur via le cookie `capzo_vid`.

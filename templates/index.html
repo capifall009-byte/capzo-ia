@@ -891,10 +891,28 @@ btnCerveau.addEventListener('click', async () => {
 });
 
 /* ============================ envoi ============================ */
+function attendreEnvois(){
+  return new Promise(resolve => {
+    let tours = 0;
+    const verifier = () => {
+      if(envois <= 0 || tours++ > 250) resolve();  // ~30 s max
+      else setTimeout(verifier, 120);
+    };
+    verifier();
+  });
+}
+
 async function envoyer(){
-  const joints = pieces.filter(p => p.id);
   const texte = userInput.value.trim();
-  if((!texte && !joints.length) || busy || envois) return;
+  if(busy) return;
+  if((!texte && !pieces.length)) return;
+  if(envois > 0){
+    loadingText.textContent = "Analyse de la photo en cours…";
+    document.getElementById("send").disabled = true;
+    await attendreEnvois();  // on envoie apres la fin de l'upload, au lieu d'ignorer
+  }
+  const joints = pieces.filter(p => p.id);
+  if(!texte && !joints.length) return;
 
   const corps = texte || "Analyse ce fichier, s'il te plaît.";
   busy = true;
@@ -1248,6 +1266,7 @@ async function panneauConnecteurs(){
   let d = {};
   try{ d = await (await fetch('/api/connecteurs')).json(); }catch(e){}
   try{ window.__hermesEtat = await (await fetch('/api/hermes/etat')).json(); }catch(e){ window.__hermesEtat = {}; }
+  try{ window.__jarvisEtat = await (await fetch('/api/jarvis/etat')).json(); }catch(e){ window.__jarvisEtat = {}; }
   const mail = d.mail || {}, ag = d.agenda || {}, ig = d.instagram || {}, g = d.google || {}, soc = d.sociaux || {};
   const dot = ok => '<span class="pastille" style="background:' + (ok ? '#10b981' : '#f59e0b') + '"></span>';
   const parts = [];
@@ -1321,9 +1340,12 @@ async function panneauConnecteurs(){
     parts.push('Non configure. Ajoute CAPZO_WINDSOR_URL et CAPZO_WINDSOR_KEY dans Render.');
   }
   parts.push('</div>');
-  // OpenJarvis
-  parts.push('<div class="connecteur"><b>OpenJarvis (GitHub)</b><br>');
-  parts.push('<span style="opacity:.7">Assistant personnel open source.</span><br>');
+  // OpenJarvis (inspire du projet Stanford, integre dans Capzo)
+  const jarvisEtat = window.__jarvisEtat || {};
+  parts.push('<div class="connecteur"><b>' + dot(true) + 'OpenJarvis — assistant personnel local-first</b><br>');
+  parts.push('<span style="opacity:.7">' + (jarvisEtat.nombre || 0) +
+    ' compétences intégrées : briefing, recherche, code, suivi, orchestration.</span><br>');
+  parts.push('<button class="lien-outil" id="btn-jarvis" type="button">Activer le mode Jarvis</button> ');
   parts.push('<a class="lien-outil" href="https://github.com/open-jarvis/OpenJarvis" target="_blank">Voir le projet</a>');
   parts.push('</div>');
   // Hermes (inspire du projet NousResearch, integre dans Capzo)
@@ -1408,6 +1430,16 @@ async function panneauConnecteurs(){
       userInput.focus();
       const note = bulle('assistant');
       note.innerHTML = markdown('🧬 **Mode Hermes activé** : je retiens ce que tu m’apprends et je m’adapte à toi.');
+    };
+    const jarvis = document.getElementById('btn-jarvis');
+    if (jarvis) jarvis.onclick = () => {
+      selProfil.value = 'jarvis';
+      appliquerProfil();
+      localStorage.setItem('capzo_profil', 'jarvis');
+      fermerPanneau();
+      userInput.focus();
+      const note = bulle('assistant');
+      note.innerHTML = markdown('🤖 **Mode Jarvis activé** : briefing, recherche, code et automatisation, façon OpenJarvis.');
     };
   }, 80);
 }
