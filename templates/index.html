@@ -903,15 +903,24 @@ async function envoyer(){
         assurerBulle();
         const note = document.createElement("div");
         note.className = "outil-badge";
-        note.textContent = ev.texte || "Ouverture…";
-        corpsOutils.appendChild(note);
+        note.textContent = ev.texte || "Ouvrir…";
         if(ev.url){
-          const dedans = /^(tel|sms|mailto):/.test(ev.url);
-          setTimeout(() => {
-            if(dedans) window.location.href = ev.url;
-            else window.open(ev.url, "_blank", "noopener");
-          }, 700);
+          const a = document.createElement("a");
+          a.className = "lien-outil";
+          a.href = ev.url;
+          a.style.marginLeft = "8px";
+          a.textContent = "Ouvrir ▶";
+          if(/^https?:/.test(ev.url)) a.target = "_blank";
+          // Si l'app native n'est pas installee, on retombe sur le site web.
+          if(ev.repli && !/^https?:/.test(ev.url)){
+            a.addEventListener("click", () => {
+              setTimeout(() => { try{ window.location.href = ev.repli; }catch(e){} }, 1300);
+            });
+          }
+          note.appendChild(a);
         }
+        corpsOutils.appendChild(note);
+        versLeBas();
       } else if(ev.type === "lien"){
         assurerBulle();
         if(ev.url){
@@ -1180,6 +1189,7 @@ async function panneauConnecteurs(){
   } else {
     parts.push('Aucune app Meta configuree : colle simplement un jeton d\'acces Instagram (compte pro).' +
       '<br><input type="password" class="champ-jeton" data-jeton="instagram" placeholder="Colle ton jeton d\'acces" style="width:100%;margin-top:6px;padding:8px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e2e8f0">' +
+      '<br><input type="text" data-compte="instagram" placeholder="ID du compte (facultatif)" style="width:100%;margin-top:6px;padding:8px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e2e8f0">' +
       '<button class="lien-outil" data-jeton-ok="instagram" type="button" style="margin-top:6px">Enregistrer le jeton</button>');
   }
   parts.push('</div>');
@@ -1263,7 +1273,7 @@ async function panneauConnecteurs(){
         try{
           const r = await fetch('/api/social/' + encodeURIComponent(svc) + '/token', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token })
+            body: JSON.stringify({ token, compte: (document.querySelector('[data-compte="' + svc + '"]') || {}).value || '' })
           });
           const j = await r.json().catch(() => ({}));
           if(!r.ok){ alert(j.error || 'Jeton refuse.'); b.disabled = false; return; }

@@ -11,7 +11,7 @@ import time
 import urllib.parse
 import urllib.request
 
-from . import connecteurs, google_auth, instagram, internet, llm
+from . import connecteurs, google_auth, instagram, internet, llm, social
 
 MAX_TOURS = 3
 
@@ -27,7 +27,29 @@ LIENS_APPS = {
     "gmail": "https://mail.google.com/",
     "agenda": "https://calendar.google.com/",
     "calendrier": "https://calendar.google.com/",
+    "telegram": "https://t.me/",
+    "twitter": "https://x.com/",
+    "x": "https://x.com/",
     "appareil photo": None,
+}
+
+# Liens natifs (schémas d'application). Si l'app n'est pas installee, l'UI
+# retombe sur le lien web via le champ « repli » de l'evenement.
+APPS_NATIVES = {
+    "whatsapp": "whatsapp://send",
+    "instagram": "instagram://",
+    "youtube": "vnd.youtube://",
+    "maps": "geo:0,0",
+    "plan": "geo:0,0",
+    "spotify": "spotify://",
+    "tiktok": "tiktok://",
+    "facebook": "fb://",
+    "telegram": "tg://",
+    "twitter": "twitter://",
+    "x": "twitter://",
+    "gmail": "googlegmail://",
+    "agenda": "calshow://",
+    "calendrier": "calshow://",
 }
 
 OUTILS = [
@@ -79,7 +101,7 @@ OUTILS = [
             "required": ["url_video"]}}},
     {"type": "function", "function": {
         "name": "ouvrir_app",
-        "description": "Ouvrir une application sur le telephone (whatsapp, instagram, maps, youtube, spotify, tel, sms).",
+        "description": "Ouvrir une application sur le telephone : whatsapp, instagram, maps, youtube, spotify, tiktok, facebook, telegram, twitter, gmail, agenda, tel, sms, mail.",
         "parameters": {"type": "object", "properties": {
             "nom": {"type": "string"},
             "cible": {"type": "string", "description": "Numero, adresse ou recherche (optionnel)"}},
@@ -115,7 +137,9 @@ MOTS_MAIL = ("mail", "mails", "e-mail", "email", "courriel", "boite de reception
 MOTS_AGENDA = ("agenda", "rendez-vous", "rdv", "calendrier", "planning", "meeting")
 MOTS_INSTA = ("instagram", "insta", "reel", "reels", "publication insta")
 MOTS_GOOGLE = ("google", "connexion", "connecte", "compte")
-MOTS_APP = ("ouvre", "ouvrir", "lance", "appelle", "sms", "whatsapp", "maps", "youtube", "spotify")
+MOTS_APP = ("ouvre", "ouvrir", "lance", "appelle", "sms", "whatsapp", "maps", "youtube",
+            "spotify", "instagram", "tiktok", "facebook", "telegram", "twitter", "gmail",
+            "agenda", "calendrier", "appareil photo")
 MOTS_INTERNET = ("cherche", "recherche", "rechercher", "internet", "actualite", "actualité", "news", "quoi de neuf", "dernieres infos", "dernières infos", "trouve", "google")
 
 
@@ -151,6 +175,7 @@ def _resume_agenda(evts, jours):
 
 
 def _lien_app(nom, cible=""):
+    """Retourne (lien, message). Le lien peut etre un schema natif (instagram://...)."""
     nom = (nom or "").strip().lower()
     cible = (cible or "").strip()
     if nom in ("tel", "telephone", "téléphone", "appel", "appelle"):
@@ -167,10 +192,47 @@ def _lien_app(nom, cible=""):
     if not base:
         return None, ("Je ne sais pas ouvrir « " + nom + " ». Je peux ouvrir : "
                       + ", ".join(sorted(k for k in LIENS_APPS if LIENS_APPS[k] and k != "plan")) + ".")
+    natif = APPS_NATIVES.get(nom)
     if nom in ("maps", "plan") and cible:
-        return (base + "/search/?api=1&query=" + urllib.parse.quote(cible),
+        q = urllib.parse.quote(cible)
+        return (("geo:0,0?q=" + q) if natif else (base + "/search/?api=1&query=" + q),
                 "J'ouvre la carte sur " + cible + ".")
+    if natif:
+        if nom == "whatsapp" and cible:
+            return ("whatsapp://send?phone=" + re.sub(r"[^\d+]", "", cible),
+                    "J'ouvre WhatsApp pour " + cible + ".")
+        if nom == "instagram" and cible:
+            return ("instagram://user?username=" + urllib.parse.quote(cible.strip().lstrip("@")),
+                    "J'ouvre Instagram sur @" + cible.strip().lstrip("@") + ".")
+        return (natif, "J'ouvre " + nom + ".")
     return (base, "J'ouvre " + nom + ".")
+
+
+def _ig():
+    """Jeton/identifiant Instagram du visiteur courant (colle dans le panneau)."""
+    try:
+        jeton, compte = social.jeton("instagram")
+    except Exception:
+        return None, None
+    identifiant = str(compte or "").strip()
+    # L'identifiant Graph est numerique ; "compte connecté" ne l'est pas.
+    return jeton, (identifiant if identifiant.isdigit() else None)
+
+
+def _repli_app(nom, cible=""):
+    """Lien web de secours quand l'application native n'est pas installee."""
+    nom = (nom or "").strip().lower()
+    cible = (cible or "").strip()
+    base = LIENS_APPS.get(nom)
+    if not base:
+        return None
+    if nom in ("maps", "plan") and cible:
+        return base + "/search/?api=1&query=" + urllib.parse.quote(cible)
+    if nom == "instagram" and cible:
+        return base + cible.strip().lstrip("@") + "/"
+    if nom == "whatsapp" and cible:
+        return base + re.sub(r"[^\d+]", "", cible)
+    return base if APPS_NATIVES.get(nom) else None
 
 
 def executer(nom, args):
@@ -200,13 +262,14 @@ def executer(nom, args):
                   "texte": infos.get("titre")} if infos.get("lien") else None
             return json.dumps(infos, ensure_ascii=False), ev
         if nom == "instagram_profil":
-            data, err = instagram.profil()
+            data, err = instagram.profil(*_ig())
             return json.dumps({"erreur": err} if err else {"profil": data}, ensure_ascii=False), None
         if nom == "instagram_medias":
-            data, err = instagram.medias(args.get("nombre", 5))
+            data, err = instagram.medias(args.get("nombre", 5), *_ig())
             return json.dumps({"erreur": err} if err else {"medias": data}, ensure_ascii=False), None
         if nom == "instagram_publier":
-            data, err = instagram.publier_video(args.get("url_video"), args.get("legende") or "")
+            data, err = instagram.publier_video(args.get("url_video"), args.get("legende") or "",
+                                                *_ig())
             if err:
                 return json.dumps({"erreur": err}, ensure_ascii=False), None
             return (json.dumps(data, ensure_ascii=False),
@@ -217,7 +280,9 @@ def executer(nom, args):
             if not lien:
                 return json.dumps({"erreur": texte}, ensure_ascii=False), None
             return (json.dumps({"ok": True, "lien": lien}, ensure_ascii=False),
-                    {"type": "ouvrir", "url": lien, "texte": texte})
+                    {"type": "ouvrir", "url": lien,
+                     "repli": _repli_app(args.get("nom"), args.get("cible") or ""),
+                     "texte": texte})
         if nom == "heure_date":
             return json.dumps({"maintenant": time.strftime("%Y-%m-%d %H:%M", time.localtime()),
                                "jour": time.strftime("%A", time.localtime())},
@@ -322,7 +387,7 @@ def _executer_direct(texte):
                 err or _resume_agenda(evts, jours))
     if "instagram" in t and _contient(t, ("profil", "statistique", "abonnes", "abonnés", "stats")):
         try:
-            data, err = instagram.profil()
+            data, err = instagram.profil(*_ig())
         except Exception as e:
             err, data = str(e), None
         if err:
@@ -339,7 +404,8 @@ def _executer_direct(texte):
             lien, message = _lien_app(nom, "")
             if lien:
                 return ([("outil", {"nom": "ouvrir_app", "ok": True}),
-                         ("ouvrir", {"url": lien, "texte": message})], message)
+                         ("ouvrir", {"url": lien, "repli": _repli_app(nom, ""),
+                                     "texte": message})], message)
             return [("outil", {"nom": "ouvrir_app", "ok": False})], message
     return None, None
 

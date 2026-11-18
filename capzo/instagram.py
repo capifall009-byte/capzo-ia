@@ -33,9 +33,9 @@ def _erreur(data):
     return e.get("error_user_msg") or e.get("message") or "Erreur Instagram inconnue."
 
 
-def _appel(chemin, methode="GET", params=None, timeout=40):
+def _appel(chemin, methode="GET", params=None, timeout=40, jeton=None):
     params = dict(params or {})
-    params["access_token"] = TOKEN
+    params["access_token"] = jeton or TOKEN
     url = BASE + chemin
     if methode == "GET":
         url += "?" + urllib.parse.urlencode(params)
@@ -56,43 +56,75 @@ def _appel(chemin, methode="GET", params=None, timeout=40):
         raise RuntimeError("Instagram injoignable : " + str(e)[:160])
 
 
-def _verifier():
-    if not PRET:
+def _identifier(jeton=None, utilisateur=None):
+    """Resout le jeton et l'identifiant Instagram (env ou jeton colle dans l'appli)."""
+    jeton = (jeton or TOKEN or "").strip()
+    utilisateur = (utilisateur or UTILISATEUR or "").strip()
+    if not jeton:
         raise RuntimeError(
-            "Instagram n'est pas configure. Ajoute CAPZO_IG_USER et CAPZO_IG_TOKEN "
-            "dans CapzoIA/.env (compte professionnel + app Meta).")
+            "Instagram n'est pas connecte. Ouvre le panneau des connecteurs (🔌) "
+            "et colle un jeton d'acces Meta, ou ajoute CAPZO_IG_TOKEN dans Render.")
+    if not utilisateur:
+        # Le visiteur n'a donne que son jeton : on demande a Meta quel compte IG y est lie.
+        data = _appel("/me", params={
+            "fields": "id,name,accounts{id,name,instagram_account{id,username}}"
+        }, jeton=jeton)
+        if "error" in data:
+            raise RuntimeError(_erreur(data))
+        comptes = ((data.get("accounts") or {}).get("data")) or []
+        for compte in comptes:
+            ig = compte.get("instagram_account") or {}
+            if ig.get("id"):
+                utilisateur = str(ig["id"])
+                break
+        if not utilisateur:
+            for compte in comptes:
+                pid = compte.get("id")
+                if not pid:
+                    continue
+                info = _appel("/" + str(pid), params={
+                    "fields": "instagram_account{id,username}"}, jeton=jeton)
+                ig = info.get("instagram_account") or {}
+                if ig.get("id"):
+                    utilisateur = str(ig["id"])
+                    break
+        if not utilisateur:
+            raise RuntimeError(
+                "Compte Instagram introuvable avec ce jeton. Colle aussi l'identifiant "
+                "du compte professionnel (champ « ID du compte ») dans le panneau.")
+    return jeton, utilisateur
 
 
-def profil():
-    _verifier()
-    data = _appel("/" + UTILISATEUR, params={
+def profil(jeton=None, utilisateur=None):
+    jeton, utilisateur = _identifier(jeton, utilisateur)
+    data = _appel("/" + utilisateur, params={
         "fields": "username,name,biography,followers_count,follows_count,media_count,"
-                  "profile_picture_url"})
+                  "profile_picture_url"}, jeton=jeton)
     if "error" in data:
         return None, _erreur(data)
     return data, None
 
 
-def medias(nombre=5):
-    _verifier()
-    data = _appel("/" + UTILISATEUR + "/media", params={
+def medias(nombre=5, jeton=None, utilisateur=None):
+    jeton, utilisateur = _identifier(jeton, utilisateur)
+    data = _appel("/" + utilisateur + "/media", params={
         "fields": "id,caption,media_type,media_product_type,permalink,thumbnail_url,"
                   "like_count,comments_count,timestamp",
-        "limit": max(1, min(int(nombre or 5), 20))})
+        "limit": max(1, min(int(nombre or 5), 20))}, jeton=jeton)
     if "error" in data:
         return [], _erreur(data)
     return data.get("data", []), None
 
 
-def publier_video(url_video, legende="", attendre=90):
+def publier_video(url_video, legende="", attendre=90, jeton=None, utilisateur=None):
     """Publie un Reel. La video doit etre accessible par une URL PUBLIQUE (https)."""
-    _verifier()
+    jeton, utilisateur = _identifier(jeton, utilisateur)
     if not str(url_video or "").startswith("https://"):
         return None, ("Il faut une adresse vidéo publique en https (Meta doit pouvoir la "
                       "télécharger). Héberge le fichier sur ton site Capzo, puis réessaie.")
-    creation = _appel("/" + UTILISATEUR + "/media", "POST", {
+    creation = _appel("/" + utilisateur + "/media", "POST", {
         "media_type": "REELS", "video_url": url_video,
-        "caption": (legende or "")[:2000], "share_to_feed": "true"})
+        "caption": (legende or "")[:2000], "share_to_feed": "true"}, jeton=jeton)
     if "error" in creation or not creation.get("id"):
         return None, _erreur(creation)
     ident = creation["id"]
@@ -100,7 +132,7 @@ def publier_video(url_video, legende="", attendre=90):
     limite = time.time() + max(20, int(attendre or 90))
     statut = "IN_PROGRESS"
     while time.time() < limite:
-        info = _appel("/" + ident, params={"fields": "status_code,status"})
+        info = _appel("/" + ident, params={"fields": "status_code,status"}, jeton=jeton)
         statut = (info.get("status_code") or "").upper()
         if statut == "FINISHED":
             break
@@ -111,9 +143,10 @@ def publier_video(url_video, legende="", attendre=90):
         return None, ("La vidéo est encore en traitement chez Meta. Réessaie dans une minute "
                       "(identifiant de publication : " + ident + ").")
 
-    publication = _appel("/" + UTILISATEUR + "/media_publish", "POST", {"creation_id": ident})
+    publication = _appel("/" + utilisateur + "/media_publish", "POST",
+                         {"creation_id": ident}, jeton=jeton)
     if "error" in publication or not publication.get("id"):
         return None, _erreur(publication)
     media_id = publication["id"]
-    lien = _appel("/" + media_id, params={"fields": "permalink"})
+    lien = _appel("/" + media_id, params={"fields": "permalink"}, jeton=jeton)
     return {"id": media_id, "lien": lien.get("permalink")}, None

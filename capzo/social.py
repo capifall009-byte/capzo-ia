@@ -235,6 +235,12 @@ def callback(service, code, url_racine):
     return True, compte or "compte connecté"
 
 
+def jeton(service):
+    """Retourne (jeton, identifiant) enregistres pour ce visiteur, sans rien divulguer."""
+    d = _lire(service)
+    return d.get("access_token") or None, d.get("compte") or None
+
+
 def deconnecter(service):
     try:
         os.remove(_chemin(service, "jeton"))
