@@ -800,11 +800,13 @@ def api_chat_stream():
 
         if agent.detecter_intention(demande):
             yield evt({"type": "attente", "text": "Je consulte tes connecteurs…"})
+            dernier_texte = ""
             try:
                 for genre, valeur in agent.repondre(messages, system, mode=mode,
                                                     modele=modele, reflexion=reflexion,
                                                     profil=profil):
                     if genre == "delta":
+                        dernier_texte += str(valeur or "")
                         yield evt({"type": "delta", "text": valeur})
                     elif genre == "stats":
                         yield evt({"type": "stats", "stats": valeur})
@@ -812,21 +814,23 @@ def api_chat_stream():
                         yield evt({"type": genre, **(valeur or {})})
             except Exception as e:
                 yield evt({"type": "error", "text": f"Connecteur indisponible ({e})."})
-            memoire.ajouter_message("assistant", complet)
+            memoire.ajouter_message("assistant", dernier_texte)
             yield evt({"type": "fin"})
             return
 
+        dernier_texte = ""
         try:
             for genre, valeur in llm.chat_stream(messages, system=system, mode=mode,
                                                  modele=modele, reflexion=reflexion,
                                                  profil=profil):
                 if genre == "delta":
+                    dernier_texte += str(valeur or "")
                     yield evt({"type": "delta", "text": valeur})
                 else:
                     yield evt({"type": "stats", "stats": valeur})
         except Exception as e:
             yield evt({"type": "error", "text": f"Moteur IA indisponible ({e})."})
-        memoire.ajouter_message("assistant", complet)
+        memoire.ajouter_message("assistant", dernier_texte)
         yield evt({"type": "fin"})
 
     return Response(flux(), mimetype="text/event-stream",
