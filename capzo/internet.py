@@ -63,6 +63,61 @@ def rechercher(requete, nombre=6):
     return resultats, None
 
 
+MOTS_EXPLICITES = (
+    "sur internet", "sur le web", "cherche sur", "recherche sur", "va voir sur",
+    "regarde sur internet", "d'apres internet", "d'après internet", "google",
+)
+
+MOTS_TEMPORELS = (
+    "aujourd'hui", "aujourd hui", "actuellement", "en ce moment", "maintenant",
+    "cette annee", "cette année", "cette semaine", "ce mois", "hier", "demain",
+    "derniere", "dernière", "dernier", "derniers", "recente", "récente", "recent",
+    "récent", "nouveau", "nouvelle", "nouveaute", "nouveauté", "2025", "2026",
+    "2027", "prochain", "prochaine", "a venir", "à venir",
+)
+
+MOTS_INFO = (
+    "meteo", "météo", "prix", "cout", "coût", "combien coute", "combien coûte",
+    "tarif", "taux de change", "bourse", "cours de l'action", "score", "resultat du match",
+    "résultat du match", "classement", "election", "élection", "president", "président",
+    "qui est le", "qui est la", "sortie de", "quand sort", "date de sortie",
+    "actualite", "actualité", "les news", "info du jour", "trafic", "greve", "grève",
+    "bourse", "bitcoin", "crypto", "dollar", "euro", "temperature", "seisme", "séisme",
+)
+
+
+def faut_chercher(texte):
+    """Devine si la question demande des informations fraiches du web."""
+    t = (texte or "").lower()
+    if not t or len(t) > 500:
+        return False
+    if any(m in t for m in MOTS_EXPLICITES):
+        return True
+    if any(m in t for m in MOTS_INFO):
+        return True
+    temporel = any(m in t for m in MOTS_TEMPORELS)
+    interrogatif = any(m in t for m in ("quel", "quelle", "quels", "quelles", "qui",
+                                        "quand", "combien", "ou ", "où "))
+    return temporel and interrogatif
+
+
+def apercu(requete, nombre=5, max_chars=1800):
+    """Recherche web + resume compact et date, pret a etre injecte dans le prompt."""
+    import time as _time
+    resultats, erreur = rechercher(requete, nombre)
+    if erreur or not resultats:
+        return ""
+    lignes = ["=== INFORMATIONS WEB EN DIRECT ===",
+              "Date du jour : " + _time.strftime("%d/%m/%Y"),
+              "Question : " + requete[:200],
+              "Sources trouvees (appuie-toi dessus et cite les liens) :"]
+    for i, r in enumerate(resultats, 1):
+        lignes.append(f"[{i}] {r.get('titre', '')[:120]} — {r.get('extrait', '')[:230]} "
+                      f"({r.get('url', '')[:150]})")
+    texte = "\n".join(lignes)
+    return texte[:max_chars] + ("\n(Cite tes sources avec leur lien.)" if len(texte) > 200 else "")
+
+
 def lire_page(url, max_chars=5000):
     """Telecharge une page et renvoie son texte lisible."""
     url = (url or "").strip()

@@ -11,9 +11,9 @@ import re
 import time
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MAX_FAITS = 40
-MAX_HISTORIQUE = 80
-MAX_CHARS = 8000
+MAX_FAITS = 120
+MAX_HISTORIQUE = 150
+MAX_CHARS = 24000
 
 
 def _cle_visiteur():
@@ -101,21 +101,36 @@ def effacer_tout():
 
 def detecter_et_stocker(message):
     t = (message or "").strip()
-    if not t:
+    if not t or len(t) > 600:
         return []
     trouves = []
     motifs = [
-        r"(?:souviens[- ]toi que|rappele[- ]toi que|rappelle[- ]toi que)\s*(.+)",
-        r"(?:je pr[ée]f[èe]re|j'aime|m[ae] (?:nom|pr[ée]nom) (?:est|c'est))\s*(.+)",
-        r"(?:je n'aime pas|j'ai horreur de)\s*(.+)",
-        r"(?:mon (?:m[ée]tier|travail|projet|objectif) (?:est|c'est))\s*(.+)",
+        (r"(?:souviens[- ]toi que|rappelle[- ]toi que|retiens que|note que|"
+         r"n'oublie pas que|m[ée]morise que)\s*(.+)", ""),
+        (r"(?:je m'appelle|mon nom est|appelle[- ]moi)\s+(.+)", "Prénom/nom"),
+        (r"(?:j'habite (?:à|a|au|aux)|je vis (?:à|a|au|aux)|je suis de|je viens de)\s+(.+)", "Lieu"),
+        (r"(?:mon anniversaire (?:est|c'est)|je suis n[ée] le)\s+(.+)", "Anniversaire"),
+        (r"(?:mon m[ée]tier|mon travail|ma profession)\s*(?:est|c'est)\s*(.+)", "Métier"),
+        (r"(?:je travaille|j'[ée]tudie|je fais des [ée]tudes)\s+(.+)", "Activité"),
+        (r"(?:je pr[ée]f[èe]re|ma pr[ée]f[ée]rence (?:est|c'est)|je privil[ée]gie)\s*(.+)", "Préférence"),
+        (r"(?:j'aime|j'adore|j'appr[ée]cie)\s*(.+)", "Aime"),
+        (r"(?:je n'aime pas|j'ai horreur de|je d[ée]teste|je hais)\s*(.+)", "N'aime pas"),
+        (r"(?:[àa] l'avenir|d[ée]sormais|dor[ée]navant|"
+         r"[àa] partir de maintenant)\s*,?\s*(.+)", "Consigne"),
+        (r"(?:r[ée]ponds|parle|[ée]cris)[- ]moi\s+(toujours\s+.+)", "Ton/style"),
+        (r"(?:utilise|emploie)\s+(toujours\s+.+)", "Consigne"),
+        (r"(?:je suis allergique (?:à|a|au|aux)|je suis intol[ée]rant (?:à|a|au|aux))\s*(.+)", "Santé"),
+        (r"(?:mon objectif|mes objectifs|mon but|mon projet)\s*(?:est|c'est|:)\s*(.+)", "Objectif"),
     ]
-    for motif in motifs:
+    for motif, etiquette in motifs:
         for m in re.finditer(motif, t, re.IGNORECASE):
             clause = m.group(1).strip().rstrip(".!?")
+            clause = re.sub(r"\s+", " ", clause)
             if 3 <= len(clause) <= 240:
-                ajouter_fait(clause)
-                trouves.append(clause)
+                fait = (etiquette + " : " + clause) if etiquette else clause
+                ajouter_fait(fait)
+                if clause not in trouves:
+                    trouves.append(clause)
     return trouves
 
 
@@ -147,9 +162,9 @@ def contexte():
     morceaux = []
     if d.get("faits"):
         morceaux.append("Faits/préférences de l'utilisateur (à respecter) : " +
-                        " ; ".join(d["faits"][-20:]))
+                        " ; ".join(d["faits"][-45:]))
     if d.get("historique"):
-        morceaux.append("Souvenirs récents : " + " | ".join(d["historique"][-10:]))
+        morceaux.append("Souvenirs récents : " + " | ".join(d["historique"][-15:]))
     if not morceaux:
         return ""
     return ("\n\n=== MÉMOIRE (personnalisation) ===\n" + "\n".join(morceaux) +

@@ -48,7 +48,8 @@ def _charger_env(chemin=None):
 _charger_env()
 
 from capzo import (agent, anim, apple_auth, auth, connecteurs, fichiers, github_auth,  # noqa: E402
-                   google_auth, images, instagram, llm, memoire, quiz, social, video, voix)
+                   google_auth, images, instagram, internet, llm, maths, memoire, quiz,
+                   social, video, voix)
 
 UPLOADS = os.path.join(BASE, "uploads")
 os.makedirs(UPLOADS, exist_ok=True)
@@ -674,6 +675,25 @@ def _preparer(body):
     return messages, mode, modele, _preparer_profil(body), memoire
 
 
+def _enrichir(demande):
+    """Ajoute le calcul exact (sympy) et, si necessaire, des resultats web recents."""
+    morceaux = []
+    try:
+        ctx_maths = maths.contexte(demande)
+        if ctx_maths:
+            morceaux.append(ctx_maths)
+    except Exception:
+        pass
+    try:
+        if internet.faut_chercher(demande):
+            ctx_web = internet.apercu(demande)
+            if ctx_web:
+                morceaux.append(ctx_web)
+    except Exception:
+        pass
+    return "\n".join(morceaux)
+
+
 @app.route("/api/chat", methods=["POST"])
 def api_chat():
     body = request.get_json(force=True, silent=True) or {}
@@ -684,6 +704,9 @@ def api_chat():
 
     memoire_ctx = (memoire_ctx or "").strip()[:4000]
     memoire_ctx = memoire_ctx or memoire.contexte()
+    enrichi = _enrichir(messages[-1]["content"])
+    if enrichi:
+        memoire_ctx = (memoire_ctx + "\n\n" + enrichi).strip()
     memoire.ajouter_message("user", messages[-1]["content"])
     try:
         type_reponse, contenu = llm.decide(messages, mode=mode, modele=modele, profil=profil,
@@ -768,6 +791,10 @@ def api_chat_stream():
         memoire_ctx = memoire.contexte()
     if (memoire_ctx or "").strip():
         system = system + "\n\n" + memoire_ctx
+    if messages is not None:
+        enrichi = _enrichir(messages[-1]["content"])
+        if enrichi:
+            system = system + "\n\n" + enrichi
 
     def evt(charge):
         return "data: " + json.dumps(charge, ensure_ascii=False) + "\n\n"
