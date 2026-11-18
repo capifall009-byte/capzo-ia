@@ -677,12 +677,13 @@ def _preparer(body):
 @app.route("/api/chat", methods=["POST"])
 def api_chat():
     body = request.get_json(force=True, silent=True) or {}
-    messages, mode, modele, profil = _preparer(body)
+    messages, mode, modele, profil, memoire_ctx = _preparer(body)
     if messages is None:
         return jsonify({"error": "Format de conversation invalide."}), 400
     profil = llm.profil_auto(profil, messages[-1]["content"])
 
-    memoire_ctx = memoire.contexte()
+    memoire_ctx = (memoire_ctx or "").strip()[:4000]
+    memoire_ctx = memoire_ctx or memoire.contexte()
     memoire.ajouter_message("user", messages[-1]["content"])
     try:
         type_reponse, contenu = llm.decide(messages, mode=mode, modele=modele, profil=profil,
@@ -745,16 +746,17 @@ def _media_deja_pret(type_reponse, contenu):
 def api_chat_stream():
     """Reponse en flux : le texte s'affiche pendant qu'il est genere."""
     body = request.get_json(force=True, silent=True) or {}
-    messages, mode, modele, profil = _preparer(body)
+    messages, mode, modele, profil, memoire_ctx = _preparer(body)
     reflexion = (body.get("reflexion") or "equilibre").lower()
     if reflexion not in ("rapide", "equilibre", "approfondi"):
         reflexion = "equilibre"
     if messages is not None:
         profil = llm.profil_auto(profil, messages[-1]["content"])
     system = llm.systeme_pour(profil)
-    _memoire_ctx = memoire.contexte()
-    if _memoire_ctx:
-        system = system + "\n\n" + _memoire_ctx
+    if not (memoire_ctx or "").strip():
+        memoire_ctx = memoire.contexte()
+    if (memoire_ctx or "").strip():
+        system = system + "\n\n" + memoire_ctx
 
     def evt(charge):
         return "data: " + json.dumps(charge, ensure_ascii=False) + "\n\n"
