@@ -718,5 +718,12 @@ def main():
     app.run(host=hote or "127.0.0.1", port=port, threaded=True, use_reloader=False)
 
 
+@app.route("/google9cad14f7ffb7c207.html")
+def google_search_console_verification():
+    """Fichier de verification Google Search Console."""
+    return Response("google-site-verification: google9cad14f7ffb7c207.html",
+                    mimetype="text/html")
+
+
 if __name__ == "__main__":
     main()
