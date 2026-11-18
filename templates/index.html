@@ -96,60 +96,156 @@
   .connecteur b { font-size: 13px; }
   .pastille { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
   .reveil-on { color: #10b981 !important; text-shadow: 0 0 10px rgba(16,185,129,.8); }
+
+  /* ============ Refonte ChatGPT / Claude : sobre, douce, décontractée ============ */
+  :root { --ui-max: 780px; --ui-accent: #6366f1; }
+  body { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif; }
+  body.theme-dark { background: #0f1117; color: #ececf1; }
+  body.theme-light { background: #faf9f7; color: #26262b; }
+  body.theme-cyberpunk { background: #07070d; }
+  body.theme-emerald { background: #052e26; }
+
+  .app-header { background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 9px 16px !important; }
+  .app-footer { background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 6px 16px 14px !important; }
+  #chat-container { padding-top: 14px !important; }
+  .top-btn { border: 1px solid rgba(127,127,127,.22) !important; border-radius: 10px !important; padding: 7px 9px !important; background: rgba(127,127,127,.07) !important; font-size: 12px !important; }
+  .top-btn:hover { background: rgba(99,102,241,.18) !important; }
+  .top-select { border: 1px solid rgba(127,127,127,.22) !important; border-radius: 10px !important; padding: 7px 8px !important; background: rgba(127,127,127,.07) !important; font-size: 11px !important; cursor: pointer; }
+  body.theme-light .top-select { background: #fff !important; color: #26262b !important; }
+  body.theme-light .top-btn { background: #fff !important; }
+
+  /* Messages : Claude-like (réponse sans bulle, message utilisateur discret) */
+  .msg-avatar { height: 29px !important; width: 29px !important; font-size: 10px !important; }
+  .app-bubble-ai { background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 2px 0 !important; max-width: 100% !important; color: inherit !important; }
+  .app-bubble-user { background: rgba(99,102,241,.15) !important; border: 1px solid rgba(99,102,241,.28) !important; color: inherit !important; border-radius: 18px !important; }
+  body.theme-light .app-bubble-user { background: #f0f0f4 !important; border-color: #e3e3e9 !important; }
+  #chat-container .md { line-height: 1.72; font-size: 14.5px; }
+  #chat-container .md pre { background: rgba(0,0,0,.28); border: 1px solid rgba(127,127,127,.16); }
+
+  /* Composeur façon ChatGPT */
+  #chat-form { max-width: var(--ui-max) !important; border: 1px solid rgba(127,127,127,.25); border-radius: 20px; padding: 7px 8px; gap: 5px; background: rgba(127,127,127,.06); }
+  body.theme-light #chat-form { background: #fff; border-color: #e2e2e7; box-shadow: 0 8px 28px rgba(0,0,0,.06); }
+  #user-input { background: transparent !important; border: 0 !important; box-shadow: none !important; font-size: 14px !important; }
+  #send { border-radius: 14px !important; padding: 11px 14px !important; }
+  #raccourcis { max-width: var(--ui-max) !important; border: 0 !important; }
+
+  /* Écran d'accueil */
+  #welcome { max-width: var(--ui-max); margin: 0 auto; padding: 5vh 6px 20px; text-align: center; }
+  #welcome h2 { font-size: clamp(26px, 5vw, 34px); font-weight: 650; letter-spacing: -.025em; }
+  #welcome .sous-titre { opacity: .58; font-size: 14px; margin-top: 8px; }
+  #welcome .citation { margin: 16px auto 0; max-width: 560px; font-size: 12.5px; line-height: 1.6; opacity: .78; font-style: italic; padding: 10px 16px; border-radius: 14px; background: rgba(99,102,241,.08); border: 1px solid rgba(99,102,241,.14); }
+  .mode-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; margin-top: 26px; }
+  .mode-card { border: 1px solid rgba(127,127,127,.22); border-radius: 16px; padding: 13px 12px; text-align: left; cursor: pointer; transition: .18s ease; background: rgba(127,127,127,.05); color: inherit; }
+  .mode-card:hover { transform: translateY(-2px); border-color: var(--ui-accent); background: rgba(99,102,241,.11); }
+  .mode-card .icone { font-size: 17px; }
+  .mode-card b { display: block; font-size: 13px; margin-top: 6px; font-weight: 600; }
+  .mode-card span { display: block; font-size: 11px; opacity: .58; margin-top: 3px; line-height: 1.4; }
+  .segmentes { display: inline-flex; border: 1px solid rgba(127,127,127,.25); border-radius: 999px; padding: 3px; gap: 2px; margin-top: 18px; }
+  .segmentes button { font-size: 11px; padding: 5px 12px; border-radius: 999px; opacity: .7; }
+  .segmentes button.actif { background: var(--ui-accent); color: #fff; opacity: 1; }
+
+  /* Barre latérale */
+  #sidebar-voile { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 55; display: none; }
+  #sidebar-voile.visible { display: block; }
+  #sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 270px; transform: translateX(-105%); transition: transform .22s ease; background: #171820; border-right: 1px solid rgba(127,127,127,.18); z-index: 60; display: flex; flex-direction: column; padding: 14px; font-size: 13px; box-shadow: 12px 0 40px rgba(0,0,0,.25); }
+  #sidebar.ouvert { transform: none; }
+  body.theme-light #sidebar { background: #fff; }
+  .conv-item, .mode-item { padding: 8px 10px; border-radius: 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .conv-item:hover, .mode-item:hover { background: rgba(127,127,127,.14); }
+  .conv-item.actuelle, .mode-item.actuelle { background: rgba(99,102,241,.2); color: #a5b4fc; }
+  body.theme-light .conv-item.actuelle, body.theme-light .mode-item.actuelle { color: #4338ca; }
+
+  /* Portail de connexion obligatoire */
+  .auth-gate { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; background: radial-gradient(circle at 50% 0%, #22243a, #0f1117 62%); backdrop-filter: blur(6px); }
+  body.theme-light .auth-gate { background: radial-gradient(circle at 50% 0%, #fff, #eeece8 65%); }
+  .auth-card { width: 100%; max-width: 430px; border: 1px solid rgba(127,127,127,.22); border-radius: 24px; padding: 30px 26px; background: rgba(20,21,30,.94); box-shadow: 0 24px 70px rgba(0,0,0,.45); text-align: center; }
+  body.theme-light .auth-card { background: #fff; box-shadow: 0 24px 70px rgba(0,0,0,.12); }
+  .auth-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(127,127,127,.28); font-weight: 600; font-size: 14px; transition: .18s; color: inherit; }
+  .auth-btn:hover { background: rgba(127,127,127,.12); transform: translateY(-1px); }
+  .auth-btn.desactive { opacity: .45; cursor: not-allowed; transform: none; }
+  .auth-btn.desactive:hover { background: transparent; }
+  .install-banner { border: 1px solid rgba(255,255,255,.16); }
 </style>
 </head>
 <body class="theme-dark h-screen flex flex-col justify-between transition-colors duration-300">
 
-  <header class="app-header border-b p-4 flex justify-between items-center shadow-md gap-3 flex-wrap">
-    <div class="flex items-center space-x-3">
-      <div class="app-btn-primary bg-indigo-600 p-2.5 rounded-xl text-white shadow-lg">
-        <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+  <div id="sidebar-voile"></div>
+  <aside id="sidebar">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2">
+        <div class="app-btn-primary bg-indigo-600 text-white rounded-xl h-8 w-8 flex items-center justify-center"><i class="fa-solid fa-wand-magic-sparkles text-xs"></i></div>
+        <b class="text-sm">capzo ia</b>
       </div>
-      <div>
-        <h1 class="font-extrabold text-lg tracking-wide">capzo ia</h1>
-        <p class="text-xs opacity-70">Assistant · Images · Studio Vidéo</p>
+      <button id="sidebar-fermer" class="top-btn" title="Fermer le menu"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <button id="nouvelle-discussion" class="w-full rounded-xl px-3 py-2.5 text-xs font-semibold" style="background:#6366f1;color:#fff">
+      <i class="fa-solid fa-plus"></i> Nouvelle discussion
+    </button>
+    <p class="mt-5 mb-2 text-[10px] uppercase tracking-wider opacity-50">Discussions</p>
+    <div id="liste-conversations" class="space-y-1 overflow-y-auto" style="max-height:30vh"></div>
+    <p class="mt-5 mb-2 text-[10px] uppercase tracking-wider opacity-50">Modes rapides</p>
+    <div id="liste-modes" class="space-y-1"></div>
+    <button id="btn-connecter" class="w-full rounded-xl px-3 py-2 text-xs font-semibold mb-3" style="background:rgba(99,102,241,.18);color:#a5b4fc">
+      <i class="fa-solid fa-right-to-bracket"></i> Se connecter (mails, agenda)
+    </button>
+    <div class="mt-auto pt-4 border-t border-white/10">
+      <div class="flex items-center gap-2">
+        <div id="avatar-user" class="rounded-full h-8 w-8 flex items-center justify-center" style="background:#6366f1;color:#fff"><i class="fa-solid fa-user text-xs"></i></div>
+        <div class="min-w-0 flex-1">
+          <div id="auth-email" class="text-xs truncate opacity-80">Invité</div>
+          <div id="auth-fournisseur" class="text-[10px] opacity-50">non connecté</div>
+        </div>
+        <button id="btn-deco" class="top-btn" title="Se déconnecter"><i class="fa-solid fa-right-from-bracket"></i></button>
       </div>
-      <span id="moteur" class="text-[11px] px-2.5 py-1 rounded-full border border-slate-600 opacity-80">local · gratuit</span>
+    </div>
+  </aside>
+
+  <header class="app-header flex justify-between items-center gap-2 px-3 py-2">
+    <div class="flex items-center gap-2 min-w-0">
+      <button id="btn-menu" class="top-btn" title="Menu"><i class="fa-solid fa-bars"></i></button>
+      <div class="app-btn-primary bg-indigo-600 text-white rounded-xl h-8 w-8 flex items-center justify-center shadow"><i class="fa-solid fa-wand-magic-sparkles text-xs"></i></div>
+      <div class="leading-tight hidden sm:block">
+        <h1 class="font-semibold text-sm">capzo ia</h1>
+        <p class="text-[10px] opacity-55">assistant · images · vidéos</p>
+      </div>
+      <span id="moteur" class="text-[10px] px-2 py-1 rounded-full border opacity-70">local · gratuit</span>
     </div>
 
-    <div class="flex items-center gap-2 flex-wrap">
-      <select id="moteurChoix" class="bg-slate-800 border border-slate-700 text-xs rounded-xl px-3 py-2 focus:outline-none cursor-pointer transition" title="Cerveau IA">
+    <div class="flex items-center gap-1.5 flex-wrap justify-end">
+      <select id="moteurChoix" class="top-select" title="Cerveau IA">
         <option value="auto">🧠 Auto</option>
         <option value="online">🌐 En ligne</option>
       </select>
-      <select id="profil" class="bg-slate-800 border border-slate-700 text-xs rounded-xl px-3 py-2 focus:outline-none cursor-pointer transition" title="Mode d'utilisation">
+      <select id="profil" class="top-select" title="Mode d'utilisation">
         <option value="general">💬 Général</option>
         <option value="education">🎓 Éducation</option>
         <option value="code">💻 Code</option>
+        <option value="build">🛠 Build</option>
+        <option value="religion">🕊 Religion</option>
+        <option value="adulte">🎩 Adulte</option>
+        <option value="histoire">📖 Histoire</option>
         <option value="loisir">🎮 Loisir</option>
       </select>
-      <select id="reflexion" class="bg-slate-800 border border-slate-700 text-xs rounded-xl px-3 py-2 focus:outline-none cursor-pointer transition" title="Temps de réflexion">
+      <select id="reflexion" class="top-select hidden sm:block" title="Temps de réflexion">
         <option value="rapide">⚡ Rapide</option>
         <option value="equilibre" selected>⚖️ Équilibré</option>
         <option value="approfondi">🔎 Approfondi</option>
       </select>
-      <select id="theme-selector" class="bg-slate-800 border border-slate-700 text-xs rounded-xl px-3 py-2 focus:outline-none cursor-pointer transition">
+      <select id="theme-selector" class="top-select hidden md:block">
         <option value="theme-dark">🌙 Sombre Élégant</option>
         <option value="theme-cyberpunk">⚡ Néon Cyberpunk</option>
         <option value="theme-light">☀️ Mode Clair</option>
         <option value="theme-emerald">🌿 Émeraude</option>
       </select>
-      <button id="voix-btn" class="hover:text-indigo-300 text-xs transition px-3 py-2 rounded-xl hover:bg-black/10" title="Voix de Capzo">
-        <i class="fa-solid fa-volume-high"></i>
-      </button>
-      <button id="btn-reveil" class="hover:text-emerald-300 text-xs transition px-3 py-2 rounded-xl hover:bg-black/10" title="Réveil « Hey Capzo »">
-        <i class="fa-solid fa-satellite-dish"></i>
-      </button>
-      <select id="voix-choix" class="bg-slate-800 border border-slate-700 text-xs rounded-xl px-2 py-2 focus:outline-none cursor-pointer transition max-w-[160px]" title="Choisir la voix"></select>
-      <button id="ajouterCerveau" class="hover:text-indigo-300 text-xs transition px-3 py-2 rounded-xl hover:bg-black/10" title="Installer un autre cerveau">
-        <i class="fa-solid fa-plus"></i>
-      </button>
-      <button id="btn-connecteurs" class="hover:text-indigo-300 text-xs transition px-3 py-2 rounded-xl hover:bg-black/10" title="Connecteurs (mail, agenda, Instagram)">
-        <i class="fa-solid fa-plug"></i>
-      </button>
-      <button id="clear-btn" class="hover:text-red-400 text-xs transition px-3 py-2 rounded-xl hover:bg-black/10" title="Effacer la discussion">
-        <i class="fa-solid fa-trash-can"></i>
-      </button>
+      <button id="btn-installer" class="top-btn hidden sm:block" title="Installer sur Android / iPhone"><i class="fa-solid fa-download"></i></button>
+      <button id="btn-acces" class="top-btn hidden sm:block" title="Accès avancé au téléphone/PC"><i class="fa-solid fa-shield-halved"></i></button>
+      <button id="btn-connecteurs" class="top-btn" title="Connecteurs (Google, GitHub, Instagram, TikTok, Windsor IA)"><i class="fa-solid fa-plug"></i></button>
+      <button id="voix-btn" class="top-btn" title="Voix de Capzo"><i class="fa-solid fa-volume-high"></i></button>
+      <select id="voix-choix" class="top-select hidden lg:block" title="Choisir la voix"></select>
+      <button id="btn-reveil" class="top-btn hidden sm:block" title="Réveil « Hey Capzo »"><i class="fa-solid fa-satellite-dish"></i></button>
+      <button id="ajouterCerveau" class="top-btn hidden lg:block" title="Installer un autre cerveau"><i class="fa-solid fa-plus"></i></button>
+      <button id="clear-btn" class="top-btn" title="Nouvelle discussion"><i class="fa-solid fa-trash-can"></i></button>
+      <button id="btn-auth" class="top-btn" title="Mon compte"><i class="fa-solid fa-circle-user"></i></button>
     </div>
   </header>
 
@@ -163,16 +259,18 @@
   </div>
 
   <main id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4 max-w-3xl w-full mx-auto">
-    <div class="flex items-start space-x-3">
-      <div class="app-btn-primary bg-indigo-600 text-white rounded-full h-8 w-8 flex items-center justify-center shrink-0 shadow">
-        <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+    <div id="welcome">
+      <div class="text-4xl mb-3">✨</div>
+      <h2 id="salutation">Bonjour,</h2>
+      <p id="jour-message" class="sous-titre">Bienvenue dans ton espace IA.</p>
+      <p id="motivation" class="citation">Chaque grande idée commence par une simple question.</p>
+      <div class="segmentes" id="civilite-groupe">
+        <button type="button" data-civ="neutre">Bonjour</button>
+        <button type="button" data-civ="monsieur">Monsieur</button>
+        <button type="button" data-civ="madame">Madame</button>
       </div>
-      <div class="app-bubble-ai border p-4 rounded-2xl max-w-[85%] text-sm leading-relaxed shadow-sm md">
-        Salut ! Bienvenue sur <strong>capzo ia</strong>. Pose-moi une question, demande une <em>image</em>
-        ou une <em>vidéo avec voix et sous-titres</em>, ou joins un fichier.<br>
-        Nouveau : choisis un mode <strong>🎓 Éducation</strong> (exercices corrigés, quiz),
-        <strong>💻 Code</strong> ou <strong>🎮 Loisir</strong> — ou utilise les boutons juste au-dessus.
-      </div>
+      <p class="mt-9 mb-3 text-sm opacity-70">Choisis un mode pour commencer</p>
+      <div class="mode-grid" id="mode-grid"></div>
     </div>
   </main>
 
@@ -210,6 +308,15 @@
     </form>
   </footer>
 
+  <!-- Connexion optionnelle : l'utilisateur se connecte s'il le souhaite (mails, agenda, réseaux sociaux) -->
+  <div id="auth-banner" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:40;max-width:520px;width:calc(100% - 32px);display:none">
+    <div style="background:rgba(20,21,30,.95);border:1px solid rgba(99,102,241,.35);border-radius:16px;padding:12px 14px;font-size:12px;display:flex;align-items:center;gap:10px;box-shadow:0 12px 40px rgba(0,0,0,.35)">
+      <span style="flex:1">Connecte Google/GitHub pour lire tes mails et ton agenda (optionnel).</span>
+      <button id="banner-co" class="lien-outil" type="button" style="padding:6px 10px;font-size:11px">Se connecter</button>
+      <button id="banner-fermer" type="button" style="background:transparent;border:0;color:inherit;opacity:.6;font-size:16px">✕</button>
+    </div>
+  </div>
+
 <script>
 /* ============================ éléments ============================ */
 const chatContainer = document.getElementById('chat-container');
@@ -228,8 +335,12 @@ const selProfil = document.getElementById('profil');
 const themeSelector = document.getElementById('theme-selector');
 const catalogue = document.getElementById('catalogue');
 const btnCerveau = document.getElementById('ajouterCerveau');
+const welcome = document.getElementById('welcome');
+const authBanner = document.getElementById('auth-banner');
+const sidebar = document.getElementById('sidebar');
+const sidebarVoile = document.getElementById('sidebar-voile');
 
-let history = [], pieces = [], busy = false, envois = 0;
+let conversation = [], pieces = [], busy = false, envois = 0;
 
 /* ============================ thèmes ============================ */
 const CLASSE_CORPS = " h-screen flex flex-col justify-between transition-colors duration-300";
@@ -242,26 +353,44 @@ const themeSauve = localStorage.getItem('capzo_theme');
 if(themeSauve){ themeSelector.value = themeSauve; appliquerTheme(themeSauve); }
 
 /* ============================ profils d'utilisation ============================ */
+const MODES = [
+  { id: "general",   icon: "💬", nom: "Général",   desc: "Tout, simplement, sans détour." },
+  { id: "education", icon: "🎓", nom: "Éducation", desc: "Exercices corrigés et quiz." },
+  { id: "code",      icon: "💻", nom: "Code",      desc: "Code complet, prêt à tourner." },
+  { id: "build",     icon: "🛠", nom: "Build",     desc: "Construis ton projet de A à Z." },
+  { id: "religion",  icon: "🕊", nom: "Religion",  desc: "Neutre, respectueux, documenté." },
+  { id: "adulte",    icon: "🎩", nom: "Adulte",    desc: "Ton posé et mature, entre adultes." },
+  { id: "histoire",  icon: "📖", nom: "Histoire",  desc: "Une histoire à partir de ton prompt." },
+  { id: "loisir",    icon: "🎮", nom: "Loisir",    desc: "Blagues, jeux et idées de sortie." },
+];
 const PLACEHOLDERS = {
   general: "Pose une question, demande une image, une vidéo, ou joins un fichier…",
   education: "Exercice à résoudre, quiz à générer, notion à expliquer…",
   code: "Décris le programme ou colle ton erreur…",
+  build: "Décris ce que tu veux construire…",
+  religion: "Pose ta question avec calme et respect…",
+  adulte: "Parlons carrément de ta situation…",
+  histoire: "Donne-moi un thème, un personnage, une ambiance…",
   loisir: "Une devinette, une blague, un quiz culturel…"
 };
 const RACCOURCIS = {
   exercice:  ["education", "Résous cet exercice complètement, étape par étape, avec le corrigé détaillé : "],
   quiz:      ["education", "Donne-moi un quiz de 8 questions avec corrigé à la fin sur : "],
   code:      ["code",      "Écris le code complet et fonctionnel pour : "],
+  histoire:  ["histoire",  "Raconte-moi une histoire originale qui commence par : "],
   devinette: ["loisir",    "Pose-moi une devinette originale et donne la réponse à la fin."]
 };
 function appliquerProfil(){
   const p = selProfil.value;
   localStorage.setItem('capzo_profil', p);
   userInput.placeholder = PLACEHOLDERS[p] || PLACEHOLDERS.general;
+  document.querySelectorAll('.mode-card, .mode-item').forEach(el => {
+    el.classList.toggle('actuelle', el.dataset.mode === p);
+  });
 }
 selProfil.addEventListener('change', appliquerProfil);
 const profilSauve = localStorage.getItem('capzo_profil');
-if(profilSauve && (RACCOURCIS[profilSauve] || profilSauve === 'general')) selProfil.value = profilSauve;
+if(profilSauve && MODES.some(m => m.id === profilSauve)) selProfil.value = profilSauve;
 appliquerProfil();
 
 document.querySelectorAll('[data-raccourci]').forEach(btn => {
@@ -435,12 +564,12 @@ function bulle(role){
   const wrapper = document.createElement("div");
   wrapper.className = "flex items-start space-x-3" + (estUser ? " flex-row-reverse space-x-reverse" : "");
   const avatar = document.createElement("div");
-  avatar.className = (estUser ? "bg-emerald-600" : "app-btn-primary bg-indigo-600") +
-    " text-white rounded-full h-8 w-8 flex items-center justify-center shrink-0 shadow";
+  avatar.className = "msg-avatar " + (estUser ? "bg-emerald-600" : "app-btn-primary bg-indigo-600") +
+    " text-white rounded-full flex items-center justify-center shrink-0 shadow";
   avatar.innerHTML = '<i class="fa-solid ' + (estUser ? "fa-user" : "fa-wand-magic-sparkles") + ' text-xs"></i>';
   const corps = document.createElement("div");
-  corps.className = (estUser ? "bg-indigo-600 text-white" : "app-bubble-ai border") +
-    " p-3.5 rounded-2xl max-w-[80%] text-sm shadow-sm leading-relaxed";
+  corps.className = (estUser ? "app-bubble-user" : "app-bubble-ai") +
+    " p-3.5 rounded-2xl max-w-[85%] text-sm leading-relaxed";
   wrapper.appendChild(avatar); wrapper.appendChild(corps);
   chatContainer.appendChild(wrapper);
   versLeBas();
@@ -680,12 +809,13 @@ async function envoyer(){
 
   const corps = texte || "Analyse ce fichier, s'il te plaît.";
   busy = true;
+  welcome.classList.add('hidden');
   couperVoix();
   parleJusqua = 0;
   document.getElementById("send").disabled = true;
   userInput.value = "";
   messageUtilisateur(corps, joints);
-  history.push({ role: "user", content: corps });
+  conversation.push({ role: "user", content: corps });
   pieces = []; dessinerPieces();
 
   const bas = texte.toLowerCase();
@@ -712,7 +842,7 @@ async function envoyer(){
     const choix = modeDemande();
     const r = await fetch("/api/chat/stream", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: history, mode: choix.mode, modele: choix.modele,
+      body: JSON.stringify({ messages: conversation, mode: choix.mode, modele: choix.modele,
                              reflexion: selReflexion.value, profil: selProfil.value,
                              fichiers: joints.map(p => p.id) })
     });
@@ -818,11 +948,12 @@ async function envoyer(){
   }
 
   if(complet || media){
-    history.push({ role: "assistant", content: (complet || "") +
+    conversation.push({ role: "assistant", content: (complet || "") +
       (media && media.animation ? " [une animation a été générée]" :
        media && media.image ? " [une image a été générée]" :
        media && media.video ? " [une vidéo a été générée]" : "") });
   }
+  sauvegarderConversation();
   busy = false;
   document.getElementById("send").disabled = envois > 0;
   userInput.focus();
@@ -832,18 +963,10 @@ async function envoyer(){
 chatForm.addEventListener('submit', e => { e.preventDefault(); envoyer(); });
 userInput.addEventListener('keydown', e => { if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); envoyer(); } });
 
-clearBtn.addEventListener('click', () => {
-  history = []; pieces = []; dessinerPieces();
-  couperVoix();
-  chatContainer.innerHTML = `
-    <div class="flex items-start space-x-3">
-      <div class="app-btn-primary bg-indigo-600 text-white rounded-full h-8 w-8 flex items-center justify-center shrink-0 shadow">
-        <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
-      </div>
-      <div class="app-bubble-ai border p-3.5 rounded-2xl max-w-[80%] text-sm shadow-sm leading-relaxed">
-        Discussion réinitialisée ! Raconte-moi, quelle histoire veux-tu que je crée ?
-      </div>
-    </div>`;
+clearBtn.addEventListener('click', nouvelleDiscussion);
+document.getElementById('nouvelle-discussion').addEventListener('click', () => {
+  nouvelleDiscussion();
+  fermerSidebar();
 });
 
 /* ============================ micro ============================ */
@@ -980,11 +1103,11 @@ function ouvrirPanneau(html){
   document.getElementById('fermer-panneau').onclick = fermerPanneau;
 }
 
-document.getElementById('btn-connecteurs').addEventListener('click', async () => {
+async function panneauConnecteurs(){
   ouvrirPanneau('<h3>🔌 Connecteurs</h3><p style="opacity:.7">Chargement…</p>');
   let d = {};
   try{ d = await (await fetch('/api/connecteurs')).json(); }catch(e){}
-  const mail = d.mail || {}, ag = d.agenda || {}, ig = d.instagram || {}, g = d.google || {};
+  const mail = d.mail || {}, ag = d.agenda || {}, ig = d.instagram || {}, g = d.google || {}, soc = d.sociaux || {};
   const dot = ok => '<span class="pastille" style="background:' + (ok ? '#10b981' : '#f59e0b') + '"></span>';
   const html =
     '<h3>🔌 Connecteurs</h3>' +
@@ -1013,6 +1136,28 @@ document.getElementById('btn-connecteurs').addEventListener('click', async () =>
         ? 'Compte : ' + echapper(ig.compte || '')
         : 'Non configuré.<br><code>CAPZO_IG_USER</code> + <code>CAPZO_IG_TOKEN</code> (compte professionnel + app Meta).') +
       '<br><span style="opacity:.7">Essaie : « stats de mon Instagram » · « publie ce Reel »</span></div>' +
+    '<div class="connecteur"><b>' + dot(soc.instagram && soc.instagram.pret) + 'Instagram (OAuth Meta)</b><br>' +
+      ((soc.instagram && soc.instagram.pret)
+        ? 'Connecté : ' + echapper(soc.instagram.compte || 'compte Instagram') +
+          '<br><button class="lien-outil" data-deco="instagram" type="button">Déconnecter</button>'
+        : ((soc.instagram && soc.instagram.configure)
+            ? 'Prêt à connecter.<br><button class="lien-outil" data-social="instagram" type="button">Connecter Instagram</button>'
+            : 'Non configuré. Ajoute <code>CAPZO_IG_APP_ID</code> et <code>CAPZO_IG_APP_SECRET</code> dans Render (ou <code>CAPZO_IG_TOKEN</code> pour le mode compte existant).')) +
+      '</div>' +
+    '<div class="connecteur"><b>' + dot(soc.tiktok && soc.tiktok.pret) + 'TikTok (OAuth officiel)</b><br>' +
+      ((soc.tiktok && soc.tiktok.pret)
+        ? 'Connecté : ' + echapper(soc.tiktok.compte || 'compte TikTok') +
+          '<br><button class="lien-outil" data-deco="tiktok" type="button">Déconnecter</button>'
+        : ((soc.tiktok && soc.tiktok.configure)
+            ? 'Prêt à connecter.<br><button class="lien-outil" data-social="tiktok" type="button">Connecter TikTok</button>'
+            : 'Non configuré. Ajoute <code>CAPZO_TIKTOK_CLIENT_KEY</code> et <code>CAPZO_TIKTOK_CLIENT_SECRET</code> dans Render, puis déclare le callback <code>/api/social/tiktok/callback</code>.')) +
+      '</div>' +
+    '<div class="connecteur"><b>' + dot(soc.windsor && soc.windsor.configure) + 'Windsor IA (passerelle générique)</b><br>' +
+      ((soc.windsor && soc.windsor.configure)
+        ? 'Passerelle renseignée : ' + echapper(soc.windsor.nom || 'Windsor IA') +
+          '<br><button class="lien-outil" id="btn-test-windsor" type="button">Tester la connexion</button> <span id="test-windsor" style="opacity:.7"></span>'
+        : 'Non configuré. Ajoute <code>CAPZO_WINDSOR_URL</code> et <code>CAPZO_WINDSOR_KEY</code> dans Render. La clé n\'est jamais affichée ici.') +
+      '<br><span style="opacity:.7">Sert de hub générique pour brancher d\'autres services sans changer l\'hébergement.</span></div>' +
     '<div class="connecteur"><b>' + dot(d.cloud) + 'Moteur rapide</b><br>' +
       (d.cloud
         ? 'Clé API active : ' + echapper(d.modele_cloud || '')
@@ -1027,10 +1172,38 @@ document.getElementById('btn-connecteurs').addEventListener('click', async () =>
     const deco = document.getElementById('btn-deco-google');
     if(deco) deco.onclick = async () => {
       await fetch('/api/google/deconnexion', { method: 'POST' });
+      await fetch('/api/auth/deconnexion', { method: 'POST' });
+      await verifierConnexion();
       panneauConnecteurs();
     };
+    document.querySelectorAll('[data-social]').forEach(b => {
+      b.onclick = async () => {
+        try{
+          const r = await fetch('/api/social/' + encodeURIComponent(b.dataset.social) + '/url');
+          const j = await r.json();
+          if(r.ok && j.url) location.href = j.url;
+          else alert(j.error || 'Connexion impossible.');
+        }catch(e){ alert('Connexion impossible.'); }
+      };
+    });
+    document.querySelectorAll('[data-deco]').forEach(b => {
+      b.onclick = async () => {
+        await fetch('/api/social/' + encodeURIComponent(b.dataset.deco) + '/deconnexion', { method: 'POST' });
+        panneauConnecteurs();
+      };
+    });
+    const test = document.getElementById('btn-test-windsor');
+    if(test) test.onclick = async () => {
+      const zone = document.getElementById('test-windsor');
+      if(zone) zone.textContent = ' test…';
+      try{
+        const j = await (await fetch('/api/social/windsor/test')).json();
+        if(zone) zone.textContent = ' ' + (j.message || '');
+      }catch(e){ if(zone) zone.textContent = ' test impossible.'; }
+    };
   }, 80);
-});
+}
+document.getElementById('btn-connecteurs').addEventListener('click', panneauConnecteurs);
 
 /* ============================ état du moteur ============================ */
 function rafraichirEtat(){
@@ -1081,14 +1254,20 @@ window.addEventListener('appinstalled', () => { const b = document.getElementByI
 /* Retour de la connexion Google */
 try{
   const q = new URLSearchParams(location.search);
-  if(q.get('google') === 'ok'){
-    alert('✅ Compte Google connecté' + (q.get('email') ? ' : ' + decodeURIComponent(q.get('email')) : '') + '.');
-  } else if(q.get('google') === 'echec'){
-    alert('Connexion Google échouée : ' + decodeURIComponent(q.get('msg') || ''));
-  } else if(q.get('google') === 'refuse'){
-    alert('Connexion Google annulée.');
+  if(q.get('google') === 'ok' || q.get('connexion') === 'ok'){
+    alert('✅ Connecté à Capzo IA' + (q.get('email') ? ' : ' + decodeURIComponent(q.get('email')) : '') + '.');
+  } else if(q.get('google') === 'echec' || q.get('connexion') === 'echec'){
+    alert('Connexion échouée : ' + decodeURIComponent(q.get('msg') || 'réessaie.'));
+  } else if(q.get('google') === 'refuse' || q.get('connexion') === 'refuse'){
+    alert('Connexion annulée.');
   }
-  if(q.has('google')) history.replaceState({}, '', location.pathname);
+  if(q.has('social')){
+    const service = q.get('social'), resultat = q.get('resultat');
+    if(resultat === 'ok') alert('✅ ' + service + ' connecté à Capzo IA.');
+    else if(resultat === 'refuse') alert('Connexion ' + service + ' annulée.');
+    else alert('Connexion ' + service + ' échouée : ' + decodeURIComponent(q.get('msg') || 'réessaie.'));
+  }
+  if(q.has('google') || q.has('connexion') || q.has('social')) window.history.replaceState({}, '', location.pathname);
 }catch(e){}
 
 /* Fichiers partagés depuis une autre app (Android / iOS) */
@@ -1109,6 +1288,300 @@ try{
     });
   }
 }catch(e){}
+
+/* ============================ accueil personnalisé ============================ */
+const JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+const MOTIVATIONS = [
+  "Un petit pas aujourd'hui vaut mieux qu'un grand plan demain.",
+  "Ta prochaine bonne idée est à une question de distance.",
+  "Fais simple, fais clair, fais avancer.",
+  "Les grands projets commencent toujours par un brouillon.",
+  "Tu n'as pas besoin d'être prêt : commence quand même.",
+  "La curiosité est ton meilleur moteur aujourd'hui.",
+  "Une erreur bien comprise vaut trois réussites oubliées.",
+  "Prends le temps de bien poser le problème, la réponse suivra.",
+  "Crée d'abord, peaufine ensuite.",
+  "Ce que tu apprends aujourd'hui te servira demain.",
+  "Avance à ton rythme, mais avance.",
+  "La meilleure version de ton idée est encore devant toi.",
+  "Pose la question que tu n'oses pas poser.",
+  "Fais de la place pour les bonnes surprises."
+];
+const CIVILITE = { neutre: "", monsieur: "Monsieur", madame: "Madame" };
+let sessionUtilisateur = { connecte: false, civilite: "neutre" };
+
+function civilityChoisie(){
+  return sessionUtilisateur.civilite || localStorage.getItem('capzo_civ') || 'neutre';
+}
+function saluer(){
+  const d = new Date(), h = d.getHours();
+  const moment = h < 12 ? "Bonjour" : h < 18 ? "Bon après-midi" : "Bonsoir";
+  const titre = CIVILITE[civilityChoisie()] || "";
+  document.getElementById('salutation').textContent = moment + (titre ? " " + titre : "") + ",";
+  document.getElementById('jour-message').textContent =
+    "Nous sommes " + JOURS[d.getDay()] + " " + d.getDate() + " " + MOIS[d.getMonth()] +
+    " · une nouvelle page s'ouvre aujourd'hui.";
+  const debut = new Date(d.getFullYear(), 0, 0);
+  const jourAn = Math.floor((d - debut) / 86400000);
+  document.getElementById('motivation').textContent = "✨ " + MOTIVATIONS[jourAn % MOTIVATIONS.length];
+  document.querySelectorAll('#civilite-groupe button').forEach(b => {
+    b.classList.toggle('actif', b.dataset.civ === civilityChoisie());
+  });
+}
+document.querySelectorAll('#civilite-groupe button').forEach(b => {
+  b.onclick = async () => {
+    const civ = b.dataset.civ;
+    localStorage.setItem('capzo_civ', civ);
+    sessionUtilisateur.civilite = civ;
+    saluer();
+    try{
+      const r = await fetch('/api/auth/civilite', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ civilite: civ })
+      });
+      if(r.ok) sessionUtilisateur = await r.json();
+    }catch(e){}
+  };
+});
+
+/* ============================ modes (accueil + menu) ============================ */
+function construireModes(){
+  const grille = document.getElementById('mode-grid');
+  const liste = document.getElementById('liste-modes');
+  grille.innerHTML = ''; liste.innerHTML = '';
+  MODES.forEach(m => {
+    const carte = document.createElement('button');
+    carte.type = 'button'; carte.className = 'mode-card'; carte.dataset.mode = m.id;
+    carte.innerHTML = '<div class="icone">' + m.icon + '</div><b>' + m.nom + '</b><span>' + m.desc + '</span>';
+    carte.onclick = () => {
+      selProfil.value = m.id; appliquerProfil(); userInput.focus(); versLeBas();
+    };
+    grille.appendChild(carte);
+    const entree = document.createElement('div');
+    entree.className = 'mode-item'; entree.dataset.mode = m.id;
+    entree.textContent = m.icon + '  ' + m.nom;
+    entree.onclick = () => { selProfil.value = m.id; appliquerProfil(); fermerSidebar(); userInput.focus(); };
+    liste.appendChild(entree);
+  });
+  appliquerProfil();
+}
+
+/* ============================ discussions sauvegardées ============================ */
+const CLE_CONVS = 'capzo_convs';
+let convIndex = -1;
+function lireConvs(){
+  try{ const v = JSON.parse(localStorage.getItem(CLE_CONVS) || '[]'); return Array.isArray(v) ? v : []; }
+  catch(e){ return []; }
+}
+function ecrireConvs(liste){
+  try{ localStorage.setItem(CLE_CONVS, JSON.stringify(liste.slice(-30))); }catch(e){}
+}
+function dessinerConversations(){
+  const boite = document.getElementById('liste-conversations');
+  boite.innerHTML = '';
+  const liste = lireConvs();
+  for(let i = liste.length - 1; i >= 0; i--){
+    const c = liste[i] || {};
+    const el = document.createElement('div');
+    el.className = 'conv-item' + (i === convIndex ? ' actuelle' : '');
+    el.textContent = (c.titre || 'Discussion') + ' · ' +
+      new Date(c.date || Date.now()).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+    el.onclick = () => chargerConversation(i);
+    boite.appendChild(el);
+  }
+}
+function sauvegarderConversation(){
+  if(!conversation.length) return;
+  const liste = lireConvs();
+  const premier = conversation.find(m => m.role === 'user');
+  const entree = {
+    titre: (premier ? premier.content : 'Nouvelle discussion').slice(0, 46),
+    date: Date.now(), messages: conversation.slice(-40)
+  };
+  if(convIndex >= 0 && liste[convIndex]) liste[convIndex] = entree;
+  else { liste.push(entree); convIndex = liste.length - 1; }
+  ecrireConvs(liste); dessinerConversations();
+}
+function chargerConversation(i){
+  const c = lireConvs()[i];
+  if(!c) return;
+  convIndex = i;
+  conversation = (c.messages || []).slice();
+  chatContainer.innerHTML = '';
+  conversation.forEach(m => {
+    const corps = bulle(m.role);
+    corps.innerHTML = markdown(m.content || '');
+  });
+  welcome.classList.add('hidden');
+  fermerSidebar(); versLeBas(); dessinerConversations();
+}
+function nouvelleDiscussion(){
+  if(conversation.length) sauvegarderConversation();
+  convIndex = -1; conversation = []; pieces = []; dessinerPieces();
+  couperVoix(); chatContainer.innerHTML = '';
+  welcome.classList.remove('hidden'); saluer(); versLeBas(); dessinerConversations();
+}
+
+/* ============================ menu latéral ============================ */
+function ouvrirSidebar(){ sidebar.classList.add('ouvert'); sidebarVoile.classList.add('visible'); }
+function fermerSidebar(){ sidebar.classList.remove('ouvert'); sidebarVoile.classList.remove('visible'); }
+document.getElementById('btn-menu').onclick = ouvrirSidebar;
+document.getElementById('sidebar-fermer').onclick = fermerSidebar;
+sidebarVoile.onclick = fermerSidebar;
+
+/* ============================ connexion obligatoire ============================ */
+async function verifierConnexion(){
+  let etat = {};
+  try{ etat = await (await fetch('/api/auth/etat', { cache: 'no-store' })).json(); }catch(e){}
+  sessionUtilisateur = etat && typeof etat === 'object' ? etat : { connecte: false };
+  if(sessionUtilisateur.connecte){
+    document.getElementById('auth-email').textContent =
+      sessionUtilisateur.email || sessionUtilisateur.nom || 'Connecté';
+    document.getElementById('auth-fournisseur').textContent =
+      'via ' + (sessionUtilisateur.fournisseur || 'OAuth');
+    const b = document.getElementById('auth-banner'); if(b) b.style.display = 'none';
+  } else {
+    document.getElementById('auth-email').textContent = 'Invité';
+    document.getElementById('auth-fournisseur').textContent = 'non connecté';
+    const b = document.getElementById('auth-banner'); if(b) b.style.display = 'flex';
+  }
+  if(sessionUtilisateur.civilite) localStorage.setItem('capzo_civ', sessionUtilisateur.civilite);
+  saluer();
+}
+document.getElementById('btn-auth').onclick = () => { verifierConnexion().then(ouvrirSidebar); };
+document.getElementById('btn-connecter').onclick = () => { panneauConnecteurs(); };
+document.getElementById('btn-deco').onclick = async () => {
+  try{ await fetch('/api/auth/deconnexion', { method: 'POST' }); }catch(e){}
+  fermerSidebar(); nouvelleDiscussion(); await verifierConnexion();
+};
+/* Si le serveur refuse une action (401), on réaffiche le portail. */
+const fetchCapzo = window.fetch;
+window.fetch = function(){
+  const promesse = fetchCapzo.apply(this, arguments);
+  const url = String(arguments[0] || '');
+  if(url.indexOf('/api/') === 0){
+    promesse.then(r => { if(r.status === 401 && authBanner) authBanner.style.display = 'flex'; }).catch(() => {});
+  }
+  return promesse;
+};
+
+/* ============================ installation Android / iOS ============================ */
+document.getElementById('btn-installer').onclick = () => {
+  ouvrirPanneau(
+    '<h3>📲 Installer Capzo IA</h3>' +
+    '<p><b>Android (Chrome)</b> : ouvre cette page → menu ⋮ → « Installer l’application » ' +
+    'ou « Ajouter à l’écran d’accueil ». L’icône se comporte comme une vraie app.</p>' +
+    '<p><b>iPhone (Safari)</b> : bouton Partager → « Sur l’écran d’accueil ».</p>' +
+    '<p><b>APK Android</b> : le dossier <code>native/android</code> contient un projet Android Studio ' +
+    'gratuit à compiler. La PWA reste le moyen le plus simple : elle se met à jour toute seule.</p>' +
+    '<p style="text-align:center"><img src="/static/icons/qr-capzo.png" alt="QR code Capzo IA" ' +
+    'style="width:150px;border-radius:12px;background:#fff;padding:8px"><br>' +
+    '<a class="lien-outil" href="/static/icons/qr-capzo.png" download>Télécharger le QR code</a></p>' +
+    '<p style="opacity:.7">Adresse officielle : <code>capzo-ia.onrender.com</code> — hébergement inchangé.</p>'
+  );
+};
+
+/* ============================ accès avancé (téléphone / PC) ============================ */
+function panneauAcces(){
+  ouvrirPanneau('<h3>🛡 Accès avancé</h3><p style="opacity:.7">Rien n\'est activé sans ton accord. ' +
+    'Ces accès servent à la voix, à la caméra, aux notifications, etc. ' +
+    'Sur le web ils sont limités par le navigateur ; l\'app Android donne accès natif.</p>' +
+    '<div id="acces-liste"></div>');
+  const liste = [
+    { id: 'microphone', nom: 'Microphone', desc: 'Parler à Capzo, réveil « Hey Capzo ».' },
+    { id: 'camera', nom: 'Caméra', desc: 'Analyser une photo ou une vidéo en direct.' },
+    { id: 'notifications', nom: 'Notifications', desc: 'Être prévenu des réponses.' },
+    { id: 'geolocation', nom: 'Position', desc: 'Météo et infos locales.' },
+    { id: 'clipboard', nom: 'Presse-papiers', desc: 'Coller du texte depuis d\'autres apps.' },
+    { id: 'fichiers', nom: 'Fichiers', desc: 'Ouvrir un dossier pour joindre des documents.' },
+  ];
+  const box = document.getElementById('acces-liste');
+  const perms = (() => { try { return JSON.parse(localStorage.getItem('capzo_perms') || '{}'); } catch(e){ return {}; } })();
+  liste.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'connecteur';
+    div.innerHTML = '<b>' + item.nom + '</b><br><span style="opacity:.7;font-size:12px">' + item.desc + '</span><br>' +
+      '<span class="pastille" style="background:#f59e0b"></span><span id="statut-' + item.id + '">' +
+      (perms[item.id] || 'non demandé') + '</span><br>' +
+      '<button class="lien-outil" data-perm="' + item.id + '" type="button">Activer</button>';
+    box.appendChild(div);
+  });
+  box.querySelectorAll('[data-perm]').forEach(b => {
+    b.onclick = async () => {
+      const id = b.dataset.perm;
+      const st = document.getElementById('statut-' + id);
+      if(st) st.textContent = 'demande…';
+      if(window.CapzoNative && window.CapzoNative.requestPermission){
+        window.__capzoPermResult = (nom, ok) => {
+          if(st) st.textContent = ok ? 'accordé' : 'refusé';
+          perms[nom] = ok ? 'accordé' : 'refusé';
+          localStorage.setItem('capzo_perms', JSON.stringify(perms));
+        };
+        try{
+          if(window.CapzoNative.hasPermission && window.CapzoNative.hasPermission(id)){
+            if(st) st.textContent = 'accordé'; perms[id]='accordé';
+            localStorage.setItem('capzo_perms', JSON.stringify(perms)); return;
+          }
+        }catch(e){}
+        window.CapzoNative.requestPermission(id);
+        return;
+      }
+      let res = 'refusé';
+      try{
+        if(id === 'microphone' || id === 'camera'){
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: id === 'microphone', video: id === 'camera' });
+          stream.getTracks().forEach(t => t.stop()); res = 'accordé';
+        } else if(id === 'notifications'){
+          res = await Notification.requestPermission();
+        } else if(id === 'geolocation'){
+          res = await new Promise(resolve => navigator.geolocation.getCurrentPosition(() => resolve('accordé'), () => resolve('refusé')));
+        } else if(id === 'clipboard'){
+          await navigator.clipboard.readText(); res = 'accordé';
+        } else if(id === 'fichiers'){
+          if('showDirectoryPicker' in window){ await window.showDirectoryPicker(); res = 'accordé'; }
+          else res = 'non supporté sur ce navigateur';
+        }
+      }catch(e){ res = 'refusé : ' + (e.message || ''); }
+      if(st) st.textContent = res;
+      perms[id] = res;
+      localStorage.setItem('capzo_perms', JSON.stringify(perms));
+    };
+  });
+  if(window.CapzoNative){
+    liste.forEach(item => {
+      try{
+        if(window.CapzoNative.hasPermission && window.CapzoNative.hasPermission(item.id)){
+          const st = document.getElementById('statut-' + item.id);
+          if(st) st.textContent = 'accordé';
+          perms[item.id] = 'accordé';
+        }
+      }catch(e){}
+    });
+    localStorage.setItem('capzo_perms', JSON.stringify(perms));
+  }
+}
+document.getElementById('btn-acces').onclick = panneauAcces;
+
+const bannerCo = document.getElementById('banner-co');
+if(bannerCo) bannerCo.onclick = () => panneauConnecteurs();
+const bannerFermer = document.getElementById('banner-fermer');
+if(bannerFermer) bannerFermer.onclick = () => {
+  const b = document.getElementById('auth-banner'); if(b) b.style.display = 'none';
+};
+
+/* ============================ démarrage ============================ */
+try{
+  const modeDemandeURL = new URLSearchParams(location.search).get('mode');
+  if(modeDemandeURL && MODES.some(m => m.id === modeDemandeURL)){
+    selProfil.value = modeDemandeURL;
+    localStorage.setItem('capzo_profil', modeDemandeURL);
+  }
+}catch(e){}
+construireModes();
+saluer();
+dessinerConversations();
+verifierConnexion();
 
 </script>
 </body>

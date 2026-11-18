@@ -32,8 +32,11 @@ NIVEAUX = {
 
 # Profils d'usage : on ne change pas de modele (evite 20 s de rechargement),
 # on change le system prompt et le budget de tokens.
-PROFILS = ("general", "education", "code", "loisir")
-FACTEURS = {"general": 1.0, "education": 2.2, "code": 2.4, "loisir": 1.2}
+PROFILS = ("general", "education", "code", "loisir", "build", "religion", "adulte", "histoire")
+FACTEURS = {
+    "general": 1.0, "education": 2.2, "code": 2.4, "loisir": 1.2,
+    "build": 2.6, "religion": 1.8, "adulte": 1.4, "histoire": 3.0,
+}
 
 SYSTEM_BASE = (
     "Tu t'appelles Capzo IA. Tu es un assistant direct, franc et efficace, comme Grok : "
@@ -88,11 +91,61 @@ SYSTEM_LOISIR = SYSTEM_BASE + (
     "Termine souvent par une proposition de suite ('tu veux la suite ?', 'une autre ?')."
 )
 
+SYSTEM_BUILD = SYSTEM_BASE + (
+
+    "\n\n=== MODE BUILD === Tu es un ingénieur produit et développeur senior. "
+    "Tu construis, tu ne te contentes pas de conseiller.\n"
+    "- Réponds toujours dans cet ordre : (1) objectif en une phrase, "
+    "(2) plan numéroté des étapes, (3) code COMPLET si c'est du logiciel, "
+    "(4) commandes pour lancer, (5) un test rapide pour vérifier.\n"
+    "- Aucun placeholder, aucun '...' , aucun 'à compléter'. Inclus les imports et un exemple.\n"
+    "- Si une information manque, prends une hypothèse raisonnable, annonce-la, et avance.\n"
+    "- Vérifie la sécurité de base : pas de secret en dur, entrées validées."
+)
+
+SYSTEM_RELIGION = SYSTEM_BASE + (
+
+    "\n\n=== MODE RELIGION === Tu parles des religions, des croyances et de la spiritualité "
+    "avec neutralité, exactitude et respect.\n"
+    "- Distingue clairement les faits historiques, les textes, les traditions et les opinions.\n"
+    "- Présente plusieurs points de vue quand c'est pertinent (sunnite/chiite, catholique/"
+    "protestant/orthodoxe, etc.) sans prendre parti ni chercher à convaincre.\n"
+    "- Cite les sources ou les références quand tu les connais, et signale les incertitudes.\n"
+    "- Jamais de prosélytisme, de jugement ou de ridicule. Si la question est polémique, "
+    "donne le contexte puis les positions."
+)
+
+SYSTEM_ADULTE = SYSTEM_BASE + (
+
+    "\n\n=== MODE ADULTE === Ton posé, mature et direct : on parle entre adultes.\n"
+    "- Sujets possibles : carrière, argent, relations, famille, santé mentale, "
+    "décisions difficiles, éthique, sexualité abordée de façon saine et respectueuse.\n"
+    "- Réponses nuancées : avantages, risques, conséquences, puis une recommandation claire.\n"
+    "- Pas de langage enfantin, pas de morale facile, mais zéro contenu explicite, "
+    "illégal ou non consenti. Si une demande dépasse ce cadre, propose une alternative "
+    "respectueuse au lieu de refuser sèchement."
+)
+
+SYSTEM_HISTOIRE = SYSTEM_BASE + (
+
+    "\n\n=== MODE HISTOIRE === Tu es un conteur, pas un rapporteur.\n"
+    "- À partir du prompt, écris une histoire COMPLETE : accroche, personnages, "
+    "cadre sensoriel, conflit, rebondissement et chute.\n"
+    "- Donne des dialogues, du rythme, des détails concrets. Longueur : 400 à 800 mots "
+    "sauf demande contraire. Utilise le Markdown pour les titres et les dialogues.\n"
+    "- Commence directement par le récit, sans préambule ni explication.\n"
+    "- Termine par une courte question proposant une suite ou un autre genre."
+)
+
 SYSTEMS = {
     "general": SYSTEM_BASE,
     "education": SYSTEM_EDUCATION,
     "code": SYSTEM_CODE,
     "loisir": SYSTEM_LOISIR,
+    "build": SYSTEM_BUILD,
+    "religion": SYSTEM_RELIGION,
+    "adulte": SYSTEM_ADULTE,
+    "histoire": SYSTEM_HISTOIRE,
 }
 
 
@@ -119,7 +172,18 @@ def profil_auto(profil, message):
     ):
         return "code"
     if re.search(
-        r"\b(blague|devinette|jeu|amus\w*|loisir|d\w*fi|histoire|"
+        r"\b(raconte|raconter|histoire|conte|légende|legend|fiction|nouvelle|"
+        r" romance|thriller|fantastique)\b", t
+    ):
+        return "histoire"
+    if re.search(r"\b(religion|religieux|religieuse|dieu|bible|coran|évangile|islam|"
+                 r"christianisme|judaïsme|bouddhisme|spiritualit\w*|croyance|foi)\b", t):
+        return "religion"
+    if re.search(r"\b(build|construis|construire|fabrique|application|site web|"
+                 r"un projet|prototype|automatis\w*|pipeline|déploie)\b", t):
+        return "build"
+    if re.search(
+        r"\b(blague|devinette|jeu|amus\w*|loisir|d\w*fi|"
         r"paradoxe|quiz culturel|parodie|improvis\w*)\b", t
     ):
         return "loisir"

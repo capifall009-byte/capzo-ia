@@ -1,5 +1,6 @@
 # Capzo IA — ton assistant, sur ton PC ou en ligne
 
+> Nouveautés (interface ChatGPT/Claude, modes, connexion obligatoire, Android, réseaux sociaux) : voir `NOUVEAUTES.md`.
 Ton assistant **Capzo IA** : chat en direct, images, animations 2D avec voix off,
 **pièces jointes** (photos, vidéos, fichiers) et **plusieurs cerveaux IA**.
 

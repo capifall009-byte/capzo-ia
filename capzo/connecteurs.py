@@ -258,6 +258,7 @@ def creer_evenement(titre, debut, duree_min=60, lieu="", description=""):
     """
     if google_auth is not None and (google_auth.etat() or {}).get("pret"):
         return google_auth.calendar_creer(titre, debut, duree_min, lieu, description)
+    contenu = _ics(titre, debut, duree_min, lieu, description)
     if not contenu:
         return None, "Date invalide. Utilise le format AAAA-MM-JJ HH:MM (ex. 2026-11-20 14:30)."
 

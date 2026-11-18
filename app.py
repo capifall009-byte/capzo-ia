@@ -47,8 +47,8 @@ def _charger_env(chemin=None):
 
 _charger_env()
 
-from capzo import (agent, anim, connecteurs, fichiers, google_auth, images, instagram,  # noqa: E402
-                   llm, quiz, video, voix)
+from capzo import (agent, anim, apple_auth, auth, connecteurs, fichiers, github_auth,  # noqa: E402
+                   google_auth, images, instagram, llm, quiz, social, video, voix)
 
 UPLOADS = os.path.join(BASE, "uploads")
 os.makedirs(UPLOADS, exist_ok=True)
@@ -99,6 +99,20 @@ def _poser_cookie_visiteur(reponse):
     return reponse
 
 
+# Connexion OAuth : optionnelle. Capzo reste utilisable sans compte ; seules les
+# fonctions mail/agenda/réseaux sociaux exigent une connexion (vérifiée par
+# chaque connecteur). Aucune porte bloquante à l'accueil.
+# Les callbacks et endpoints d'état restent publics.
+PUBLIC_API = {
+    "/api/etat", "/api/auth/etat",
+    "/api/google/etat", "/api/google/url", "/api/google/connexion", "/api/google/callback",
+    "/api/github/etat", "/api/github/connexion", "/api/github/callback",
+    "/api/apple/etat", "/api/apple/connexion", "/api/apple/callback",
+    "/api/social/etat",
+}
+PUBLIC_API_PREFIXES = ("/api/social/",)
+
+
 # Pieces jointes gardees en memoire pour la session en cours
 PIECES = {}
 PIECES_MAX = 40
@@ -134,7 +148,14 @@ def index():
 MANIFESTE = {
     "name": "capzo ia — assistant, images et vidéos",
     "short_name": "capzo ia",
-    "description": "Assistant IA local : chat, images, animations, fichiers, mail, agenda.",
+    "description": "Assistant IA : chat, modes Build/Religion/Adulte/Histoire, images, vidéos, fichiers, Google/GitHub et réseaux sociaux.",
+    "categories": ["productivity", "utilities"],
+    "shortcuts": [
+        {"name": "Nouvelle discussion", "short_name": "Discuter", "url": "/?mode=general",
+         "icons": [{"src": "/static/icons/icon-192.png", "sizes": "192x192"}]},
+        {"name": "Mode Build", "short_name": "Build", "url": "/?mode=build",
+         "icons": [{"src": "/static/icons/icon-192.png", "sizes": "192x192"}]}
+    ],
     "lang": "fr",
     "start_url": "/",
     "scope": "/",
@@ -272,6 +293,8 @@ def api_connecteurs():
         "mail": connecteurs.etat()["mail"],
         "agenda": connecteurs.etat()["agenda"],
         "instagram": instagram.etat(),
+        "sociaux": social.etat(),
+        "session": auth.etat(),
         "outils": [t["function"]["name"] for t in agent.OUTILS],
         "cloud": bool(llm.CLOUD_PRET),
         "modele_cloud": llm.API_MODEL or None,
@@ -307,7 +330,8 @@ def api_google_url():
 def api_google_connexion():
     url, erreur = google_auth.url_connexion(request.url_root)
     if erreur:
-        return jsonify({"error": erreur}), 400
+        return redirect("/?connexion=echec&fournisseur=google&msg=" +
+                        urllib.parse.quote(str(erreur)[:180]))
     return redirect(url)
 
 
@@ -323,13 +347,144 @@ def api_google_callback():
     ok, info = google_auth.echanger_code(code, request.url_root)
     if not ok:
         return redirect("/?google=echec&msg=" + urllib.parse.quote(info[:120]))
-    return redirect("/?google=ok&email=" + urllib.parse.quote(info))
+    p = google_auth.profil()
+    auth.connecter("google", p.get("email"), p.get("nom"), p.get("photo"))
+    return redirect("/?connexion=ok&email=" + urllib.parse.quote(info))
 
 
 @app.route("/api/google/deconnexion", methods=["POST"])
 def api_google_deconnexion():
     google_auth.deconnecter()
     return jsonify({"ok": True})
+
+
+# ------------------------------------------------------------------ portail
+@app.route("/api/auth/etat")
+def api_auth_etat():
+    return jsonify(auth.etat())
+
+
+@app.route("/api/auth/civilite", methods=["POST"])
+def api_auth_civilite():
+    body = request.get_json(force=True, silent=True) or {}
+    if not auth.definir_civilite(body.get("civilite")):
+        return jsonify({"error": "Civilité invalide."}), 400
+    return jsonify(auth.etat())
+
+
+@app.route("/api/auth/deconnexion", methods=["POST"])
+def api_auth_deconnexion():
+    auth.deconnecter()
+    return jsonify({"ok": True})
+
+
+# ------------------------------------------------------------------ GitHub
+@app.route("/api/github/etat")
+def api_github_etat():
+    return jsonify(github_auth.etat())
+
+
+@app.route("/api/github/connexion")
+def api_github_connexion():
+    url, erreur = github_auth.url_connexion(request.url_root)
+    if erreur:
+        return redirect("/?connexion=echec&fournisseur=github&msg=" +
+                        urllib.parse.quote(str(erreur)[:180]))
+    return redirect(url)
+
+
+@app.route("/api/github/callback")
+def api_github_callback():
+    code = request.args.get("code")
+    state = request.args.get("state")
+    erreur = request.args.get("error")
+    if erreur:
+        return redirect("/?connexion=refuse")
+    if not code or not github_auth.verifier_state(state):
+        return redirect("/?connexion=etat_invalide")
+    ok, info, msg = github_auth.echanger_code(code, request.url_root)
+    if not ok:
+        return redirect("/?connexion=echec&msg=" + urllib.parse.quote(str(msg)[:120]))
+    auth.connecter("github", (info or {}).get("email"), (info or {}).get("nom"),
+                   (info or {}).get("photo"))
+    return redirect("/?connexion=ok&email=" + urllib.parse.quote(
+        (info or {}).get("email") or (info or {}).get("login") or "GitHub"))
+
+
+# ------------------------------------------------------------------ Apple
+@app.route("/api/apple/etat")
+def api_apple_etat():
+    return jsonify(apple_auth.etat())
+
+
+@app.route("/api/apple/connexion")
+def api_apple_connexion():
+    url, erreur = apple_auth.url_connexion(request.url_root)
+    if erreur:
+        return redirect("/?connexion=echec&fournisseur=apple&msg=" +
+                        urllib.parse.quote(str(erreur)[:180]))
+    return redirect(url)
+
+
+@app.route("/api/apple/callback", methods=["GET", "POST"])
+def api_apple_callback():
+    donnees = request.form
+    arguments = request.args
+    erreur = arguments.get("error") or donnees.get("error")
+    if erreur:
+        return redirect("/?connexion=refuse")
+    code = donnees.get("code") or arguments.get("code")
+    state = donnees.get("state") or arguments.get("state")
+    if not code or not apple_auth.verifier_state(state):
+        return redirect("/?connexion=etat_invalide")
+    ok, info, msg = apple_auth.callback(donnees, arguments, request.url_root)
+    if not ok:
+        return redirect("/?connexion=echec&msg=" + urllib.parse.quote(str(msg)[:120]))
+    auth.connecter("apple", (info or {}).get("email"), (info or {}).get("nom"), None)
+    return redirect("/?connexion=ok&email=" + urllib.parse.quote(
+        (info or {}).get("email") or "Apple"))
+
+
+# -------------------------------------------------- réseaux sociaux / Windsor
+@app.route("/api/social/etat")
+def api_social_etat():
+    return jsonify(social.etat())
+
+
+@app.route("/api/social/<service>/url")
+def api_social_url(service):
+    url, erreur = social.url_connexion(service, request.url_root)
+    if erreur:
+        return jsonify({"error": erreur}), 400
+    return jsonify({"url": url})
+
+
+@app.route("/api/social/<service>/callback")
+def api_social_callback(service):
+    code = request.args.get("code")
+    state = request.args.get("state")
+    erreur = request.args.get("error")
+    propre = (service or "").lower()
+    if erreur:
+        return redirect("/?social=" + propre + "&resultat=refuse")
+    if not code or not social.verifier_state(propre, state):
+        return redirect("/?social=" + propre + "&resultat=etat_invalide")
+    ok, info = social.callback(propre, code, request.url_root)
+    if not ok:
+        return redirect("/?social=" + propre + "&resultat=echec&msg=" +
+                        urllib.parse.quote(str(info)[:120]))
+    return redirect("/?social=" + propre + "&resultat=ok")
+
+
+@app.route("/api/social/<service>/deconnexion", methods=["POST"])
+def api_social_deconnexion(service):
+    social.deconnecter(service)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/social/windsor/test")
+def api_social_windsor_test():
+    return jsonify(social.tester_windsor())
 
 
 @app.route("/api/video/<nom>")

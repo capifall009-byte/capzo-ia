@@ -1,10 +1,11 @@
 /* Capzo IA — service worker minimal (installation + coque hors ligne) */
-const CACHE = "capzo-v3";
+const CACHE = "capzo-v4";
 const COQUE = [
   "/",
   "/manifest.webmanifest",
   "/static/icons/icon-192.png",
-  "/static/icons/icon-512.png"
+  "/static/icons/icon-512.png",
+  "/static/icons/qr-capzo.png"
 ];
 
 self.addEventListener("install", (e) => {

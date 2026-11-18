@@ -100,6 +100,12 @@ def etat():
     }
 
 
+def profil():
+    """Informations publiques du compte Google (jamais de jeton)."""
+    t = _charger_tokens()
+    return {"email": t.get("email"), "nom": t.get("nom"), "photo": t.get("photo")}
+
+
 def redirect_uri_par_defaut(url_racine):
     racine = (SITE_URL or (url_racine or "").rstrip("/"))
     return racine + "/api/google/callback"
@@ -183,6 +189,7 @@ def echanger_code(code, url_racine):
             info = json.loads(r.read().decode("utf-8", "replace"))
         tokens["email"] = info.get("email")
         tokens["nom"] = info.get("name")
+        tokens["photo"] = info.get("picture")
     except Exception:
         pass
     _sauver_tokens(tokens)

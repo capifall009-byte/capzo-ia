@@ -4,7 +4,13 @@ __pycache__/
 uploads/
 google_tokens.json
 google_state.txt
+google_tokens_*.json
+google_state_*.txt
+github_tokens_*.json
+github_state_*.txt
+social_*_*.json
+utilisateur_*.json
 native/android/.gradle/
 native/android/build/
 native/android/app/build/
-
+native/android/local.properties
