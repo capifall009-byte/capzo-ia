@@ -1160,7 +1160,6 @@ async function panneauConnecteurs(){
   }
   parts.push('</div>');
   // Sociaux
-  const soc = d.sociaux || {};
   // Instagram OAuth
   parts.push('<div class="connecteur"><b>' + dot(soc.instagram && soc.instagram.pret) + 'Instagram (OAuth Meta)</b><br>');
   if (soc.instagram && soc.instagram.pret) {
