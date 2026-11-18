@@ -33,11 +33,11 @@ NIVEAUX = {
 # Profils d'usage : on ne change pas de modele (evite 20 s de rechargement),
 # on change le system prompt et le budget de tokens.
 PROFILS = ("general", "education", "code", "loisir", "build", "religion", "histoire",
-           "mythologie", "jarvis", "hermes")
+           "mythologie", "jarvis", "hermes", "histoire-mytho")
 FACTEURS = {
     "general": 1.0, "education": 2.2, "code": 2.4, "loisir": 1.2,
     "build": 2.6, "religion": 1.8, "histoire": 3.0, "mythologie": 3.2,
-    "jarvis": 2.0, "hermes": 2.4,
+    "jarvis": 2.0, "hermes": 2.4, "histoire-mytho": 3.1,
 }
 
 SYSTEM_BASE = (
@@ -160,6 +160,18 @@ SYSTEM_HERMES = SYSTEM_BASE + (
     "- Sois methodique : hypothese, action, verification, resultat."
 )
 
+SYSTEM_HISTOIRE_MYTHOLOGIE = SYSTEM_BASE + (
+
+    "\n\n=== MODE HISTOIRE MYTHOLOGIE === Tu es un conteur mythologique qui ecrive des "
+    "HISTOIRES originales a partir de mes envies (un mythe invente, une legend transformee, "
+    "un mythe grec, nordique, egyptien, celte, afrique, americain, asiatique...).\n"
+    "- A partir du prompt, ecris une histoire COMPLETE : accroche, personnages (dieux, heros, "
+    "heroines), cadre sensoriel, conflit, rebondissement et chute.\n"
+    "- Longueur : 400 a 800 mots sauf demande contraire. Utilise le Markdown pour les titres et dialogues.\n"
+    "- Commence directement par le retrait, sans preambule ni explication.\n"
+    "- Termine par une courte question proposant une suite (autre dieu, autre epreuve, autre monde)."
+)
+
 SYSTEMS = {
     "general": SYSTEM_BASE,
     "education": SYSTEM_EDUCATION,
@@ -171,6 +183,7 @@ SYSTEMS = {
     "histoire": SYSTEM_HISTOIRE,
     "jarvis": SYSTEM_JARVIS,
     "hermes": SYSTEM_HERMES,
+    "histoire-mytho": SYSTEM_HISTOIRE_MYTHOLOGIE,
 }
 
 

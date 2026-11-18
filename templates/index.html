@@ -226,6 +226,7 @@
         <option value="build">🛠 Build</option>
         <option value="religion">🕊 Religion</option>
         <option value="mythologie">🏛 Mythologie</option>
+        <option value="histoire-mytho">🏺 Histoire mythologique</option>
         <option value="histoire">📖 Histoire</option>
         <option value="jarvis">🤖 Jarvis</option>
         <option value="hermes">🧬 Hermes</option>
@@ -244,7 +245,7 @@
       </select>
       <button id="btn-installer" class="top-btn" title="Installer sur Android / iPhone"><i class="fa-solid fa-download"></i></button>
       <button id="btn-acces" class="top-btn hidden sm:block" title="Accès avancé au téléphone/PC"><i class="fa-solid fa-shield-halved"></i></button>
-      <button id="btn-memoire" class="top-btn hidden sm:block" title="Mémoire de Capzo"><i class="fa-solid fa-brain"></i></button>
+      <button id="btn-memoire" class="top-btn" title="Mémoire de Capzo"><i class="fa-solid fa-brain"></i></button>
       <button id="btn-connecteurs" class="top-btn" title="Connecteurs (Google, GitHub, Instagram, TikTok, Windsor IA)"><i class="fa-solid fa-plug"></i></button>
       <button id="voix-btn" class="top-btn" title="Voix de Capzo"><i class="fa-solid fa-volume-high"></i></button>
       <select id="voix-choix" class="top-select hidden lg:block" title="Choisir la voix"></select>
@@ -366,6 +367,7 @@ const MODES = [
   { id: "build",     icon: "🛠", nom: "Build",     desc: "Construis ton projet de A à Z." },
   { id: "religion",  icon: "🕊", nom: "Religion",  desc: "Neutre, respectueux, documenté." },
   { id: "mythologie", icon: "🏛", nom: "Mythologie", desc: "Mythes et légendes de tous les peuples." },
+  { id: "histoire-mytho", icon: "🏺", nom: "Histoire mythologique", desc: "Un mythe, un héros, une histoire à la fois." },
   { id: "histoire",  icon: "📖", nom: "Histoire",  desc: "Une histoire à partir de ton prompt." },
   { id: "jarvis",    icon: "🤖", nom: "Jarvis",    desc: "Assistant personnel (OpenJarvis)." },
   { id: "hermes",    icon: "🧬", nom: "Hermes",    desc: "Agent qui apprend (Hermes Agent)." },
@@ -1364,15 +1366,19 @@ function saluer(){
   const d = new Date(), h = d.getHours();
   const moment = h < 12 ? "Bonjour" : h < 18 ? "Bon après-midi" : "Bonsoir";
   const titre = CIVILITE[civilityChoisie()] || "";
-  document.getElementById('salutation').textContent = moment + (titre ? " " + titre : "") + ",";
-  document.getElementById('jour-message').textContent =
+  const elSal = document.getElementById('salutation');
+  if(elSal) elSal.textContent = moment + (titre ? " " + titre : "") + ",";
+  const elJour = document.getElementById('jour-message');
+  if(elJour) elJour.textContent =
     "Nous sommes " + JOURS[d.getDay()] + " " + d.getDate() + " " + MOIS[d.getMonth()] +
     " · une nouvelle page s'ouvre aujourd'hui.";
-  const debut = new Date(d.getFullYear(), 0, 0);
-  const jourAn = Math.floor((d - debut) / 86400000);
-  document.getElementById('motivation').textContent = "✨ " + MOTIVATIONS[jourAn % MOTIVATIONS.length];
+  const elMot = document.getElementById('motivation');
+  if(elMot) { const debut = new Date(d.getFullYear(), 0, 0);
+    const jourAn = Math.floor((d - debut) / 86400000);
+    elMot.textContent = "✨ " + MOTIVATIONS[jourAn % MOTIVATIONS.length];
+  }
   document.querySelectorAll('#civilite-groupe button').forEach(b => {
-    b.classList.toggle('actif', b.dataset.civ === civilityChoisie());
+    if(b) b.classList.toggle('actif', b.dataset.civ === civilityChoisie());
   });
 }
 document.querySelectorAll('#civilite-groupe button').forEach(b => {
@@ -1467,7 +1473,8 @@ function nouvelleDiscussion(){
   convIndex = -1; conversation = []; pieces = []; dessinerPieces();
   couperVoix();
   Array.from(chatContainer.children).forEach(ch => { if(ch.id !== 'welcome') ch.remove(); });
-  welcome.classList.remove('hidden'); saluer(); versLeBas(); dessinerConversations();
+  if(welcome) welcome.classList.remove('hidden');
+  saluer(); versLeBas(); dessinerConversations();
 }
 
 /* ============================ menu latéral ============================ */
@@ -1483,15 +1490,17 @@ async function verifierConnexion(){
   try{ etat = await (await fetch('/api/auth/etat', { cache: 'no-store' })).json(); }catch(e){}
   sessionUtilisateur = etat && typeof etat === 'object' ? etat : { connecte: false };
   if(sessionUtilisateur.connecte){
-    document.getElementById('auth-email').textContent =
-      sessionUtilisateur.email || sessionUtilisateur.nom || 'Connecté';
-    document.getElementById('auth-fournisseur').textContent =
-      'via ' + (sessionUtilisateur.fournisseur || 'OAuth');
+    const ea = document.getElementById('auth-email');
+    if(ea) ea.textContent = sessionUtilisateur.email || sessionUtilisateur.nom || 'Connecté';
+    const ef = document.getElementById('auth-fournisseur');
+    if(ef) ef.textContent = 'via ' + (sessionUtilisateur.fournisseur || 'OAuth');
     const b = document.getElementById('auth-banner'); if(b) b.style.display = 'none';
   } else {
-    document.getElementById('auth-email').textContent = 'Invité';
-    document.getElementById('auth-fournisseur').textContent = 'non connecté';
-    const b = document.getElementById('auth-banner'); if(b) b.style.display = 'flex';
+    const ea2 = document.getElementById('auth-email');
+    if(ea2) ea2.textContent = 'Invité';
+    const ef2 = document.getElementById('auth-fournisseur');
+    if(ef2) ef2.textContent = 'non connecté';
+    const b2 = document.getElementById('auth-banner'); if(b2) b2.style.display = 'flex';
   }
   if(sessionUtilisateur.civilite) localStorage.setItem('capzo_civ', sessionUtilisateur.civilite);
   saluer();

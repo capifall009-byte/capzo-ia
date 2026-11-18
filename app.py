@@ -148,7 +148,7 @@ def index():
 MANIFESTE = {
     "name": "capzo ia — assistant, images et vidéos",
     "short_name": "capzo ia",
-    "description": "Assistant IA : chat, modes Build/Religion/Adulte/Histoire, images, vidéos, fichiers, Google/GitHub et réseaux sociaux.",
+    "description": "Assistant IA : chat, modes Build/Religion/Mythologie/Histoire/Jarvis/Hermes, images, vidéos, fichiers, Google/GitHub et réseaux sociaux.",
     "categories": ["productivity", "utilities"],
     "shortcuts": [
         {"name": "Nouvelle discussion", "short_name": "Discuter", "url": "/?mode=general",

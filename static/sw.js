@@ -1,5 +1,5 @@
 /* Capzo IA — service worker minimal (installation + coque hors ligne) */
-const CACHE = "capzo-v5";
+const CACHE = "capzo-v6";
 const COQUE = [
   "/",
   "/manifest.webmanifest",

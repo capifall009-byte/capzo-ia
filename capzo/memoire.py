@@ -156,16 +156,6 @@ def contexte():
             "\nUtilise cette mémoire pour personnaliser tes réponses, sans la répéter mot pour mot.")
 
 
-def effacer_tout():
-    try:
-        os.remove(_chemin())
-    except FileNotFoundError:
-        pass
-    except Exception:
-        pass
-    return True
-
-
 def etat():
     d = _lire()
     return {"faits": d.get("faits", []), "historique": d.get("historique", []),

@@ -19,9 +19,10 @@ Hébergement et adresse **inchangés** : `https://capzo-ia.onrender.com`
 
 ## 3. Nouveaux modes
 
-`build` (projet de A à Z), `religion` (neutre et documenté), `adulte` (ton mature,
-sans contenu explicite ni illégal), `histoire` (récit complet à partir du prompt).
-Ils sont dans le sélecteur du haut, dans le menu et sur l'écran d'accueil.
+`build` (projet de A à Z), `religion` (neutre et documenté), `mythologie` (mythes et
+légendes), `histoire-mytho` (récit mythologique original), `histoire` (récit complet
+à partir du prompt). Ils sont dans le sélecteur du haut, dans le menu et sur l'écran
+d'accueil.
 
 ## 4. Connexion optionnelle, sans mot de passe
 
