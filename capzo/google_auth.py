@@ -15,6 +15,7 @@ Le redirect URI a declarer dans Google Cloud Console est :
     <ton site>/api/google/callback
 """
 import base64
+import hashlib
 import json
 import os
 import time
@@ -24,6 +25,31 @@ import urllib.request
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOKENS_FICHIER = os.path.join(BASE, "google_tokens.json")
 STATE_FICHIER = os.path.join(BASE, "google_state.txt")
+
+
+def _cle_visiteur():
+    """Court hash de l'identifiant anonyme du navigateur courant.
+
+    app.py place cet identifiant dans flask.g a chaque requete. Chaque
+    visiteur dispose ainsi de ses propres jetons Google : sur le site public,
+    personne ne peut lire le mail ou l'agenda d'un autre visiteur.
+    """
+    ident = "local"
+    try:
+        from flask import g, has_request_context
+        if has_request_context():
+            ident = getattr(g, "visiteur_id", None) or ident
+    except Exception:
+        pass
+    return hashlib.sha256(str(ident).encode("utf-8")).hexdigest()[:24]
+
+
+def _chemin_tokens():
+    return os.path.join(BASE, "google_tokens_" + _cle_visiteur() + ".json")
+
+
+def _chemin_state():
+    return os.path.join(BASE, "google_state_" + _cle_visiteur() + ".txt")
 
 CLIENT_ID = (os.environ.get("CAPZO_GOOGLE_CLIENT_ID") or "").strip()
 CLIENT_SECRET = (os.environ.get("CAPZO_GOOGLE_CLIENT_SECRET") or "").strip()
@@ -42,7 +68,7 @@ USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 
 def _charger_tokens():
     try:
-        with open(TOKENS_FICHIER, "r", encoding="utf-8") as f:
+        with open(_chemin_tokens(), "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception:
         return {}
@@ -50,7 +76,7 @@ def _charger_tokens():
 
 def _sauver_tokens(data):
     try:
-        with open(TOKENS_FICHIER, "w", encoding="utf-8") as f:
+        with open(_chemin_tokens(), "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
     except Exception:
         pass
@@ -58,7 +84,7 @@ def _sauver_tokens(data):
 
 def _supprimer_tokens():
     try:
-        os.remove(TOKENS_FICHIER)
+        os.remove(_chemin_tokens())
     except FileNotFoundError:
         pass
 
@@ -83,7 +109,7 @@ def generer_state():
     import secrets
     state = secrets.token_urlsafe(24)
     try:
-        with open(STATE_FICHIER, "w", encoding="utf-8") as f:
+        with open(_chemin_state(), "w", encoding="utf-8") as f:
             f.write(state + "\n" + str(int(time.time())))
     except Exception:
         pass
@@ -92,7 +118,7 @@ def generer_state():
 
 def verifier_state(state):
     try:
-        with open(STATE_FICHIER, "r", encoding="utf-8") as f:
+        with open(_chemin_state(), "r", encoding="utf-8") as f:
             lignes = f.read().splitlines()
         if len(lignes) < 2:
             return False
