@@ -12,7 +12,7 @@ import urllib.parse
 import uuid
 import webbrowser
 
-from flask import (Flask, Response, jsonify, redirect, render_template, render_template_string,
+from flask import (Flask, Response, g, jsonify, redirect, render_template, render_template_string,
                    request, send_from_directory, stream_with_context)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -79,6 +79,25 @@ def _proteger():
         return None
     return Response("Acces protege par mot de passe.", 401,
                     {"WWW-Authenticate": 'Basic realm="Capzo IA"'})
+
+
+@app.before_request
+def _identifier_visiteur():
+    """Identifiant anonyme par navigateur : separe les comptes Google des visiteurs."""
+    vid = request.cookies.get("capzo_vid") or ""
+    if len(vid) != 32 or any(c not in "0123456789abcdef" for c in vid):
+        vid = uuid.uuid4().hex
+    g.visiteur_id = vid
+
+
+@app.after_request
+def _poser_cookie_visiteur(reponse):
+    vid = getattr(g, "visiteur_id", None)
+    if vid:
+        reponse.set_cookie("capzo_vid", vid, max_age=60 * 60 * 24 * 365,
+                           samesite="Lax", httponly=True)
+    return reponse
+
 
 # Pieces jointes gardees en memoire pour la session en cours
 PIECES = {}
@@ -697,13 +716,6 @@ def main():
     if os.environ.get("CAPZO_NO_BROWSER") != "1":
         threading.Timer(1.2, lambda: webbrowser.open(local)).start()
     app.run(host=hote or "127.0.0.1", port=port, threaded=True, use_reloader=False)
-
-
-@app.route("/google9cad14f7ffb7c207.html")
-def google_search_console_verification():
-    """Fichier de verification Google Search Console."""
-    return Response("google-site-verification: google9cad14f7ffb7c207.html",
-                    mimetype="text/html")
 
 
 if __name__ == "__main__":
