@@ -7,11 +7,15 @@ avec images (Pollinations), voix off (edge-tts), sous-titres esthetiques graves
 dans l'image et musique d'ambiance generee. C'est illimite et gratuit.
 """
 import base64
+import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
 import time
+import urllib.parse
+import urllib.request
 import uuid
 
 from PIL import Image, ImageDraw, ImageFont
@@ -28,7 +32,19 @@ try:
 except Exception:
     FFMPEG = "ffmpeg"
 
+_STOP = {"dans", "avec", "pour", "cette", "leur", "plus", "sont", "elle", "ils",
+         "les", "des", "une", "aux", "sur", "par", "que", "qui", "est", "ont",
+         "son", "ses", "mon", "mes", "ton", "tes", "notre", "votre", "leurs",
+         "depuis", "entre", "vers", "sans", "sous", "dont", "alors", "puis",
+         "ainsi", "aussi", "encore", "toujours", "jamais", "tout", "tous",
+         "toute", "toutes", "mais", "nous", "vous", "comme", "cela", "ete",
+         "etre", "fait", "faire"}
+
 FONT_CANDIDATS = [
+    os.path.join(BASE, "static", "fonts", "DejaVuSans-Bold.ttf"),
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
     r"C:\Windows\Fonts\arialbd.ttf",
     r"C:\Windows\Fonts\segoeuib.ttf",
     r"C:\Windows\Fonts\calibrib.ttf",
@@ -43,7 +59,10 @@ def _police(taille):
                 return ImageFont.truetype(chemin, taille)
             except Exception:
                 continue
-    return ImageFont.load_default()
+    try:
+        return ImageFont.load_default(size=taille)
+    except Exception:
+        return ImageFont.load_default()
 
 
 def _ffmpeg(args, timeout=300):
@@ -77,6 +96,73 @@ def _segmenter(texte):
     return sortie[:6]
 
 
+def _photo_wikimedia(requete, chemin):
+    """Photo reelle libre de droits (Wikimedia Commons), sans aucune cle API."""
+    requete = (requete or "").strip()
+    if not requete:
+        return False
+    params = {
+        "action": "query", "format": "json", "generator": "search",
+        "gsrsearch": requete, "gsrnamespace": "6", "gsrlimit": "6",
+        "prop": "imageinfo", "iiprop": "url", "iiurlwidth": "1280",
+    }
+    url = "https://commons.wikimedia.org/w/api.php?" + urllib.parse.urlencode(params)
+    entetes = {"User-Agent": "CapzoIA/1.0 (video)"}
+    try:
+        req = urllib.request.Request(url, headers=entetes)
+        with urllib.request.urlopen(req, timeout=25) as r:
+            data = json.loads(r.read().decode("utf-8", "replace"))
+    except Exception:
+        return False
+    pages = (data.get("query") or {}).get("pages") or {}
+    for page in pages.values():
+        for info in (page.get("imageinfo") or []):
+            lien = info.get("thumburl") or info.get("url")
+            if not lien:
+                continue
+            if not lien.lower().split("?")[0].endswith((".jpg", ".jpeg", ".png")):
+                continue
+            try:
+                req = urllib.request.Request(lien, headers=entetes)
+                with urllib.request.urlopen(req, timeout=40) as r:
+                    b = r.read()
+                if len(b) > 8000:
+                    with open(chemin, "wb") as f:
+                        f.write(b)
+                    return True
+            except Exception:
+                continue
+    return False
+
+
+def _fond_degrade(titre, chemin):
+    """Dernier recours : un fond degrade propre avec le titre, jamais du noir."""
+    largeur, hauteur = 1280, 720
+    img = Image.new("RGB", (largeur, hauteur))
+    d = ImageDraw.Draw(img)
+    for y in range(hauteur):
+        f = y / float(hauteur)
+        d.line([(0, y), (largeur, y)],
+               fill=(int(10 + 26 * f), int(16 + 34 * f), int(44 + 74 * f)))
+    d.ellipse([largeur - 420, -180, largeur + 180, 380], fill=(30, 52, 110))
+    d.ellipse([-160, hauteur - 260, 340, hauteur + 160], fill=(18, 32, 74))
+    titre = (titre or "Capzo").strip()
+    lignes, police, y = [titre], _police(56), 0
+    for taille in (56, 48, 42, 36, 30):
+        police = _police(taille)
+        lignes = _envelopper_texte(titre, 1100, police)
+        if len(lignes) <= 2:
+            break
+    hauteur_ligne = int(round(police.size * 1.28)) if hasattr(police, "size") else 64
+    y = hauteur // 2 - (len(lignes) * hauteur_ligne) // 2
+    for ligne in lignes:
+        d.text((80, y), ligne, font=police, fill=(238, 240, 250))
+        y += hauteur_ligne
+    d.text((80, y + 6), "Capzo IA", font=_police(26), fill=(150, 162, 190))
+    img.save(chemin, "JPEG", quality=92)
+    return chemin
+
+
 def _generer_image(prompt, segment, chemin):
     p = (prompt + ", " + segment[:90]).strip()[:500]
     full = "cinematic still, high quality, detailed, atmospheric lighting, " + p
@@ -88,28 +174,46 @@ def _generer_image(prompt, segment, chemin):
             f.write(data)
         return chemin
     except Exception:
-        img = Image.new("RGB", (768, 768), (18, 20, 32))
-        d = ImageDraw.Draw(img)
-        d.text((40, 360), "Capzo", fill=(80, 80, 100), font=_police(40))
-        img.save(chemin)
-        return chemin
+        pass
+    # 2e chance : photo reelle libre (Wikimedia Commons)
+    texte_base = (prompt or "") + " " + (segment or "")
+    jetons = [re.sub(r"[^\w\-]+", "", m) for m in texte_base.split()]
+    jetons = [m for m in jetons if len(m) > 3 and m.lower() not in _STOP]
+    essais = []
+    if jetons:
+        essais.append(" ".join(jetons[:4]))
+        if len(jetons) >= 2:
+            essais.append(" ".join(jetons[:2]))
+    for requete in essais:
+        try:
+            if _photo_wikimedia(requete, chemin):
+                return chemin
+        except Exception:
+            continue
+    # 3e chance : fond degrade avec le titre (jamais une image noire)
+    return _fond_degrade(segment or prompt, chemin)
 
 
 def _envelopper_texte(texte, largeur_px, police):
     mots = (texte or "").split()
     lignes, courante = [], ""
-    # estime ~10 px par caractere pour arial 34
-    max_chars = max(20, largeur_px // 18)
+    mesure = ImageDraw.Draw(Image.new("RGB", (10, 10)))
     for mot in mots:
-        if len(courante) + len(mot) + 1 <= max_chars:
-            courante = (courante + " " + mot).strip()
+        essai = (courante + " " + mot).strip()
+        try:
+            largeur = mesure.textlength(essai, font=police)
+        except Exception:
+            largeur = len(essai) * 20
+        if largeur <= largeur_px or not courante:
+            courante = essai
         else:
-            if courante:
-                lignes.append(courante)
+            lignes.append(courante)
             courante = mot
     if courante:
         lignes.append(courante)
-    return lignes[:3]
+    if len(lignes) > 3:
+        lignes = lignes[:2] + [" ".join(lignes[2:])]
+    return lignes
 
 
 def _bruler_sous_titre(img_path, out_path, texte):

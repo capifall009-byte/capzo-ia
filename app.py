@@ -708,6 +708,17 @@ def api_chat():
             return jsonify({"text": "Je n'ai pas reussi a generer l'image (" + str(e) + ").",
                             "error": "image"}), 200
 
+    if type_reponse == "video":
+        memoire.ajouter_message("assistant", contenu.get("text", "Voici ta video."))
+        try:
+            url = video.generer(contenu.get("prompt", ""), contenu.get("narration", ""),
+                                sous_titres=contenu.get("sous_titres", True),
+                                musique=contenu.get("musique", True))
+            return jsonify({"text": contenu.get("text", "Voici ta video."), "video": url})
+        except Exception as e:
+            return jsonify({"text": "Je n'ai pas reussi a generer la video (" + str(e) + ").",
+                            "error": "video"}), 200
+
     # animation
     memoire.ajouter_message("assistant", contenu.get("text", "Voici ta petite animation."))
     try:

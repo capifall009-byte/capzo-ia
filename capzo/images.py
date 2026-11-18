@@ -2,6 +2,7 @@
 """Images gratuites via Pollinations (aucune cle), renvoyees en data URL."""
 import base64
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -28,6 +29,10 @@ def generer_data_url(prompt, seed=None, taille=1024, timeout=180):
                 b64 = base64.b64encode(data).decode("ascii")
                 return f"data:{mime};base64,{b64}"
             derniere = RuntimeError("reponse non image (service sature)")
+        except urllib.error.HTTPError as e:
+            derniere = e
+            if e.code in (401, 402, 403, 404):
+                break
         except Exception as e:
             derniere = e
         time.sleep(2 + tentative * 2)
