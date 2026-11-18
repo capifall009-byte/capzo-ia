@@ -257,7 +257,7 @@
       <button id="btn-connecteurs" class="top-btn" title="Connecteurs (Google, GitHub, Instagram, TikTok, Windsor IA)"><i class="fa-solid fa-plug"></i></button>
       <button id="voix-btn" class="top-btn" title="Voix de Capzo"><i class="fa-solid fa-volume-high"></i></button>
       <select id="voix-choix" class="top-select hidden lg:block" title="Choisir la voix"></select>
-      <button id="btn-reveil" class="top-btn hidden sm:block" title="Réveil « Hey Capzo »"><i class="fa-solid fa-satellite-dish"></i></button>
+      <button id="btn-reveil" class="top-btn" title="Réveil « Hey Capzo » — actif par défaut"><i class="fa-solid fa-satellite-dish"></i></button>
       <button id="ajouterCerveau" class="top-btn hidden lg:block" title="Installer un autre cerveau"><i class="fa-solid fa-plus"></i></button>
       <button id="clear-btn" class="top-btn" title="Nouvelle discussion"><i class="fa-solid fa-trash-can"></i></button>
       <button id="btn-auth" class="top-btn" title="Mon compte"><i class="fa-solid fa-circle-user"></i></button>
@@ -1043,8 +1043,10 @@ function bip(){
   }catch(e){}
 }
 
-let reveilActif = localStorage.getItem('capzo_reveil') === '1';
+// Actif par defaut : Capzo ecoute « Hey Capzo » des l'ouverture de l'appli.
+let reveilActif = localStorage.getItem('capzo_reveil') !== '0';
 let recoVeille = null, captureVocale = false, minuterieCapture = null;
+let reveilAmorce = false;
 
 function majBoutonReveil(){
   const b = document.getElementById('btn-reveil');
@@ -1054,13 +1056,33 @@ function majBoutonReveil(){
 }
 majBoutonReveil();
 
+// Chrome/Safari exigent un geste de l'utilisateur pour ouvrir le micro.
+// On tente au chargement, puis au premier appui si le navigateur a refuse.
+if(reveilActif) demarrerReveil();
+function amorcerReveil(){
+  if(reveilAmorce || !reveilActif || !SR) return;
+  reveilAmorce = true;
+  demarrerReveil();
+}
+['pointerdown', 'touchend', 'keydown'].forEach(ev => {
+  document.addEventListener(ev, amorcerReveil, { once: true, passive: true });
+});
+
 function declencherReveil(){
   captureVocale = true;
   bip();
   couperVoix();
-  enfilerVoix('Comment puis-je vous être utile ?', true);
+  userInput.placeholder = "Je vous écoute…";
+  micBtn.style.background = "#4f46e5";
+  micBtn.style.color = "#fff";
+  enfilerVoix('Oui, je vous écoute.', true);
   clearTimeout(minuterieCapture);
-  minuterieCapture = setTimeout(() => { captureVocale = false; }, 9000);
+  minuterieCapture = setTimeout(() => { captureVocale = false; majFinCapture(); }, 12000);
+}
+
+function majFinCapture(){
+  userInput.placeholder = "Rédige une histoire, demande une image, ou joins un fichier…";
+  micBtn.style.background = ""; micBtn.style.color = "";
 }
 
 function demarrerReveil(){
@@ -1075,16 +1097,27 @@ function demarrerReveil(){
       let texte = '';
       for(let i = e.resultIndex; i < e.results.length; i++) texte += ' ' + e.results[i][0].transcript;
       texte = texte.toLowerCase().replace(/[.,!?]/g, ' ').replace(/\s+/g, ' ').trim();
-      if(!captureVocale && /(hey|hé|hei|et)\s+capzo/.test(texte)){
+      const motifReveil = /(?:hey|hé|he|hei|é|et)\s+capzo/gi;
+      if(!captureVocale && motifReveil.test(texte)){
         declencherReveil();
+        // « Hey Capzo, raconte-moi une histoire » : on traite tout de suite.
+        const direct = texte.replace(motifReveil, ' ').replace(/\s+/g, ' ').trim();
+        if(direct.length > 1){
+          captureVocale = false;
+          clearTimeout(minuterieCapture);
+          majFinCapture();
+          userInput.value = direct;
+          envoyer();
+        }
         return;
       }
       const dernier = e.results[e.results.length - 1];
       if(captureVocale && dernier && dernier.isFinal){
-        const ordre = texte.replace(/^\s*(hey|hé|et)\s+capzo\s*/, '').trim();
+        const ordre = texte.replace(motifReveil, ' ').replace(/\s+/g, ' ').trim();
         if(ordre.length > 1){
           captureVocale = false;
           clearTimeout(minuterieCapture);
+          majFinCapture();
           userInput.value = ordre;
           envoyer();
         }
@@ -1097,9 +1130,13 @@ function demarrerReveil(){
     recoVeille.onerror = ev => {
       recoVeille = null;
       if(ev.error === 'not-allowed' || ev.error === 'service-not-allowed'){
+        // France : le navigateur exige un appui avant d'ouvrir le micro.
+        // On ne coupe pas le reveil, on attend le premier geste de l'utilisateur.
+        if(!reveilAmorce) return;
         reveilActif = false;
         localStorage.setItem('capzo_reveil', '0');
         majBoutonReveil();
+        userInput.placeholder = "Micro refusé — autorise-le dans les réglages du navigateur";
       } else if(reveilActif){
         setTimeout(demarrerReveil, 1500);
       }
@@ -1110,6 +1147,9 @@ function demarrerReveil(){
 
 function arreterReveil(){
   reveilActif = false;
+  captureVocale = false;
+  clearTimeout(minuterieCapture);
+  majFinCapture();
   localStorage.setItem('capzo_reveil', '0');
   majBoutonReveil();
   if(recoVeille){ try{ recoVeille.stop(); }catch(e){} recoVeille = null; }
@@ -1119,6 +1159,7 @@ document.getElementById('btn-reveil').addEventListener('click', () => {
   if(reveilActif){ arreterReveil(); return; }
   if(!SR){ alert("La reconnaissance vocale n'est pas disponible dans ce navigateur."); return; }
   reveilActif = true;
+  reveilAmorce = true;
   localStorage.setItem('capzo_reveil', '1');
   majBoutonReveil();
   demarrerReveil();
